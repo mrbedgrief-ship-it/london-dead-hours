@@ -346,6 +346,14 @@ func _build_shop_shell(center: Vector3, size: Vector3, material: Material, face:
 		for chair_side in [-1.0,1.0]:
 			_box(interior,"Dining chair seat",Vector3(chair_side*1.15,0.48,-face*0.1),Vector3(0.48,0.12,0.48),shelf_mat)
 			_box(interior,"Dining chair back",Vector3(chair_side*1.15,0.82,-face*0.1-face*0.18),Vector3(0.48,0.55,0.10),shelf_mat)
+	var room_light := OmniLight3D.new()
+	room_light.name = "Warm interior light"
+	room_light.position = Vector3(center.x,3.2,center.z)
+	room_light.light_color = Color("#d7b184") if center.x > 0.0 else Color("#c8b49a")
+	room_light.light_energy = 0.85
+	room_light.omni_range = 8.5
+	room_light.shadow_enabled = false
+	add_child(room_light)
 
 func _building(center: Vector3, size: Vector3, material: Material, open_shop := false) -> void:
 	var face: float = 1.0 if center.z < 0.0 else -1.0
