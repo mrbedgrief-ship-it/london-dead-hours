@@ -39,11 +39,22 @@ func _ready() -> void:
 	add_child(head)
 
 func _physics_process(delta: float) -> void:
-	if dead: return
+	if dead:
+		return
+	var game_node = get_parent()
+	if game_node != null and game_node.get("paused") == true:
+		velocity = Vector3.ZERO
+		return
+	if not is_instance_valid(player):
+		player = null
 	attack_timer = maxf(0.0, attack_timer - delta)
 	if player == null:
 		var players := get_tree().get_nodes_in_group("player")
-		if not players.is_empty(): player = players[0]
+		if not players.is_empty():
+			player = players[0]
+		return
+	if player.dead:
+		velocity = Vector3.ZERO
 		return
 	var distance := global_position.distance_to(player.global_position)
 	if distance < 17.0 and distance > 1.25:
@@ -66,8 +77,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func take_damage(amount: float) -> void:
-	if dead: return
-	health -= amount
+	if dead or not is_finite(amount) or amount <= 0.0:
+		return
+	health = maxf(0.0, health - amount)
 	if health <= 0.0:
 		dead = true
 		velocity = Vector3.ZERO
