@@ -5,7 +5,7 @@ var health := 65.0
 var speed := 1.55
 var attack_timer := 0.0
 var dead := false
-var player: CharacterBody3D
+var player
 var body_mesh: MeshInstance3D
 
 func _ready() -> void:
