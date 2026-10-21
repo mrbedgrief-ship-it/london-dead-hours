@@ -52,14 +52,16 @@ func _ready() -> void:
 	show_main_menu()
 
 func _create_materials() -> void:
-	mat_ground = _material(Color("#424746"), 0.98)
-	mat_road = _material(Color("#242a2b"), 0.92)
-	mat_brick = _material(Color("#593d36"), 0.94)
-	mat_dark_brick = _material(Color("#352d2b"), 0.95)
-	mat_glass = _material(Color("#303b3d"), 0.3)
-	mat_gun = _material(Color("#242626"), 0.6)
-	mat_metal = _material(Color("#555a58"), 0.7)
-	mat_wood = _material(Color("#59483a"), 0.95)
+	mat_ground = _material(Color("#555650"), 0.96)
+	mat_road = _material(Color("#202627"), 0.72)
+	mat_brick = _material(Color("#624039"), 0.94)
+	mat_dark_brick = _material(Color("#403330"), 0.96)
+	mat_glass = _material(Color("#263337"), 0.22)
+	mat_gun = _material(Color("#202322"), 0.52)
+	mat_metal = _material(Color("#515653"), 0.62)
+	mat_wood = _material(Color("#594536"), 0.92)
+	mat_glass.metallic = 0.12
+	mat_road.metallic = 0.04
 
 func _material(color: Color, rough: float) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -104,17 +106,24 @@ func _create_world() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("#a0a7a5")
-	env.ambient_light_energy = 0.55
+	env.ambient_light_energy = 0.72
+	env.ambient_light_color = Color("#a4aaa8")
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
-	env.fog_light_color = Color("#747c7c")
-	env.fog_density = 0.009
+	env.fog_light_color = Color("#818987")
+	env.fog_density = 0.0065
+	env.adjustment_enabled = true
+	env.adjustment_brightness = 1.02
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 0.78
 	env_node.environment = env
 	add_child(env_node)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48, -28, 0)
-	sun.light_energy = 0.65
+	sun.light_energy = 0.82
+	sun.light_color = Color("#c3c9c7")
 	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 70.0
 	add_child(sun)
 	_box(self, "Wet road base", Vector3(0,-0.3,0), Vector3(104,0.5,104), mat_road)
 	_box(self, "Pavement north", Vector3(0,0,-9.3), Vector3(104,0.22,2.8), mat_ground)
@@ -124,7 +133,22 @@ func _create_world() -> void:
 	for x in range(-45, 46, 9):
 		_box(self, "Faded lane marking", Vector3(x,0.01,0), Vector3(3.0,0.025,0.12), _material(Color("#9b9682"),0.95), false)
 	for z in range(-44, 45, 8):
-		_box(self, "Double yellow line", Vector3(0,0.015,z), Vector3(0.08,0.025,2.8), _material(Color("#a68d45"),0.9), false)
+		_box(self, "Faded double yellow line", Vector3(0,0.015,z), Vector3(0.075,0.025,2.8), _material(Color("#a18c48"),0.92), false)
+	for side in [-1.0, 1.0]:
+		_box(self,"Kerb",Vector3(0,0.12,side*7.75),Vector3(104,0.24,0.22),_material(Color("#77766e"),0.94))
+		_box(self,"Kerb",Vector3(side*7.75,0.12,0),Vector3(0.22,0.24,104),_material(Color("#77766e"),0.94))
+	var wet_mat := _material(Color("#333a3a"),0.24)
+	wet_mat.metallic = 0.18
+	for patch in [Vector3(-26,-0.035,-4),Vector3(2,-0.035,5),Vector3(35,-0.035,8),Vector3(-7,-0.035,-17)]:
+		_box(self,"Rainwater sheen",patch,Vector3(3.8,0.012,1.15),wet_mat,false)
+	var drain_mat := _material(Color("#292e2d"),0.82)
+	for drain_pos in [Vector3(-10,0.018,7.0),Vector3(18,0.018,-7.0),Vector3(37,0.018,7.0)]:
+		_box(self,"Street drain",drain_pos,Vector3(0.75,0.035,0.42),drain_mat,false)
+		for slot in range(4):
+			_box(self,"Drain slot",drain_pos+Vector3(-0.25+slot*0.16,0.022,0),Vector3(0.035,0.012,0.32),mat_metal,false)
+	var leaf_mat := _material(Color("#76543a"),0.96)
+	for leaf_pos in [Vector3(-12,0.026,7.0),Vector3(-13,0.026,6.8),Vector3(20,0.026,-7.2),Vector3(21,0.026,-7.0),Vector3(34,0.026,7.0),Vector3(-31,0.026,-7.1)]:
+		_box(self,"Wet autumn leaves",leaf_pos,Vector3(0.18,0.018,0.09),leaf_mat,false)
 	# Brick buildings form a broken, navigable street grid.
 	for z in [-22.0, 22.0]:
 		for x in [-37.0,-18.0,4.0,27.0,44.0]:
@@ -183,12 +207,42 @@ func _create_world() -> void:
 
 func _building(center: Vector3, size: Vector3, material: Material) -> void:
 	_box(self,"Brick building",center + Vector3(0,size.y/2.0,0),size,material)
-	for y in [2.2,4.6,6.7]:
-		for x in [-size.x*0.32,0,size.x*0.32]:
-			var front_z := center.z + (size.z/2.0 + 0.02) * (1 if center.z < 0 else -1)
-			_box(self,"Dark shop window",Vector3(center.x+x,y,front_z),Vector3(1.3,1.3,0.08),mat_glass,false)
-	for x in [-size.x*0.35,size.x*0.35]:
-		_box(self,"Brick lintel",Vector3(center.x+x,3.1,center.z+size.z/2.0+0.03),Vector3(1.6,0.16,0.12),mat_metal,false)
+	var face: float = 1.0 if center.z < 0.0 else -1.0
+	var front_z: float = center.z + face * (size.z/2.0+0.035)
+	var frame_mat := _material(Color("#b0a28a"),0.86)
+	var sill_mat := _material(Color("#373633"),0.92)
+	var glass_dark := _material(Color("#172326"),0.18)
+	var ww: float = 1.22 if size.x > 11.0 else 1.08
+	var wh := 1.42
+	for row in range(3):
+		var wy: float = [2.35,4.65,6.65][row]
+		for col in range(3):
+			var wx: float = center.x + [-size.x*0.32,0.0,size.x*0.32][col]
+			var boarded: bool = (int(abs(center.x))+row*3+col)%7 == 0
+			_box(self,"Window recess",Vector3(wx,wy,front_z),Vector3(ww+0.22,wh+0.24,0.10),mat_dark_brick,false)
+			_box(self,"Window glass",Vector3(wx,wy,front_z+face*0.055),Vector3(ww,wh,0.035),glass_dark,false)
+			for side in [-1.0,1.0]:
+				_box(self,"Window frame",Vector3(wx+side*(ww/2.0+0.055),wy,front_z+face*0.09),Vector3(0.09,wh+0.18,0.12),frame_mat,false)
+			_box(self,"Window lintel",Vector3(wx,wy+wh/2.0+0.08,front_z+face*0.09),Vector3(ww+0.2,0.10,0.12),frame_mat,false)
+			_box(self,"Window sill",Vector3(wx,wy-wh/2.0-0.09,front_z+face*0.12),Vector3(ww+0.28,0.13,0.22),sill_mat,false)
+			_box(self,"Window mullion",Vector3(wx,wy,front_z+face*0.10),Vector3(0.055,wh,0.10),frame_mat,false)
+			if boarded:
+				for board in range(3):
+					_box(self,"Boarded window plank",Vector3(wx,wy-0.38+board*0.38,front_z+face*0.13),Vector3(ww*0.95,0.09,0.06),mat_wood,false)
+	var door_x: float = center.x + (size.x*0.24 if int(abs(center.x))%2==0 else -size.x*0.24)
+	_box(self,"Recessed entrance",Vector3(door_x,1.15,front_z),Vector3(1.15,2.25,0.12),mat_dark_brick,false)
+	_box(self,"Blocked doorway",Vector3(door_x,1.15,front_z+face*0.075),Vector3(0.88,1.98,0.05),sill_mat,false)
+	_box(self,"Door panel",Vector3(door_x,1.15,front_z+face*0.11),Vector3(0.64,1.7,0.055),mat_wood,false)
+	_box(self,"Door handle",Vector3(door_x+0.22,1.15,front_z+face*0.16),Vector3(0.035,0.11,0.035),mat_metal,false)
+	_box(self,"Ground-floor fascia",Vector3(center.x,3.25,front_z+face*0.14),Vector3(size.x*0.92,0.16,0.16),sill_mat,false)
+	_box(self,"Stone cornice",Vector3(center.x,size.y+0.18,center.z),Vector3(size.x+0.35,0.28,size.z+0.35),frame_mat,false)
+	_box(self,"Roof parapet",Vector3(center.x,size.y+0.48,center.z),Vector3(size.x+0.18,0.36,size.z+0.18),mat_dark_brick,false)
+	var pipe_x: float = center.x-size.x*0.43
+	_box(self,"Cast iron drainpipe",Vector3(pipe_x,size.y*0.48,front_z+face*0.16),Vector3(0.11,size.y*0.94,0.11),mat_metal,false)
+	for clamp_y in [1.0,3.5,6.0]:
+		_box(self,"Drainpipe bracket",Vector3(pipe_x,clamp_y,front_z+face*0.22),Vector3(0.22,0.07,0.08),sill_mat,false)
+	for course in range(4):
+		_box(self,"Masonry plinth",Vector3(center.x,0.28+course*0.18,front_z+face*0.08),Vector3(size.x*0.98,0.09,0.12),mat_dark_brick,false)
 
 func _make_loot(title: String, pos: Vector3, item: String, count: int) -> void:
 	var box := StaticBody3D.new()
@@ -199,12 +253,31 @@ func _make_loot(title: String, pos: Vector3, item: String, count: int) -> void:
 	var col := CollisionShape3D.new()
 	col.shape = shape
 	box.add_child(col)
-	var mesh := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = Vector3(1.0,0.9,0.75)
-	mesh.mesh = bm
-	mesh.material_override = mat_wood
-	box.add_child(mesh)
+	var kind_index: int = absi(title.hash()) % 4
+	if kind_index == 0:
+		_box(box,"Wooden crate",Vector3.ZERO,Vector3(0.92,0.78,0.68),mat_wood,false)
+		for x in [-0.35,0.0,0.35]:
+			_box(box,"Crate plank",Vector3(x,0,0.36),Vector3(0.26,0.72,0.055),mat_wood,false)
+		for x in [-0.48,0.48]:
+			_box(box,"Crate corner support",Vector3(x,0,0.39),Vector3(0.07,0.86,0.08),mat_metal,false)
+		_box(box,"Crate lid",Vector3(0,0.43,0),Vector3(1.0,0.08,0.76),mat_wood,false)
+	elif kind_index == 1:
+		_box(box,"Metal storage case",Vector3.ZERO,Vector3(0.94,0.72,0.68),mat_metal,false)
+		_box(box,"Storage lid",Vector3(0,0.39,0),Vector3(0.98,0.08,0.72),mat_dark_brick,false)
+		_box(box,"Storage latch",Vector3(0,0.06,0.37),Vector3(0.16,0.18,0.04),mat_wood,false)
+		for x in [-0.38,0.38]:
+			_box(box,"Case rib",Vector3(x,0,0.36),Vector3(0.06,0.64,0.045),mat_dark_brick,false)
+	elif kind_index == 2:
+		_box(box,"Medical cabinet",Vector3.ZERO,Vector3(0.72,0.84,0.24),mat_dark_brick,false)
+		_box(box,"Cabinet door",Vector3(0,0,0.02),Vector3(0.64,0.75,0.08),mat_metal,false)
+		_box(box,"Medical cross horizontal",Vector3(0,0.12,0.07),Vector3(0.32,0.08,0.025),_material(Color("#b8b4a7"),0.85),false)
+		_box(box,"Medical cross vertical",Vector3(0,0.12,0.07),Vector3(0.08,0.32,0.025),_material(Color("#b8b4a7"),0.85),false)
+	else:
+		_box(box,"Shop shelf carcass",Vector3.ZERO,Vector3(0.95,0.78,0.3),mat_dark_brick,false)
+		for y in [-0.24,0.02,0.28]:
+			_box(box,"Shelf",Vector3(0,y,0.20),Vector3(0.96,0.045,0.32),mat_metal,false)
+		for x in [-0.3,0.0,0.3]:
+			_box(box,"Abandoned product",Vector3(x,0.12,0.17),Vector3(0.16,0.19,0.16),mat_wood if x != 0.0 else mat_glass,false)
 	box.set_script(load("res://scripts/interactable.gd"))
 	box.title = title
 	box.item_id = item
@@ -214,21 +287,33 @@ func _make_loot(title: String, pos: Vector3, item: String, count: int) -> void:
 
 func _make_trader(pos: Vector3) -> void:
 	var body := StaticBody3D.new()
+	body.name = "Trader"
 	body.position = pos
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(1.2,1.8,0.8)
+	shape.size = Vector3(1.0,1.8,0.75)
 	var col := CollisionShape3D.new()
 	col.shape = shape
 	col.position.y = 0.9
 	body.add_child(col)
-	var mesh := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.45
-	capsule.height = 1.8
-	mesh.mesh = capsule
-	mesh.position.y = 0.9
-	mesh.material_override = _material(Color("#665344"),0.9)
-	body.add_child(mesh)
+	var coat := _material(Color("#343d38"),0.96)
+	var trousers := _material(Color("#292d2b"),0.96)
+	var skin := _material(Color("#9a806d"),0.95)
+	var pack := _material(Color("#5b4a38"),0.96)
+	_box(body,"Trader coat",Vector3(0,1.15,0),Vector3(0.72,0.76,0.38),coat,false)
+	_box(body,"Trader vest",Vector3(0,1.2,0.205),Vector3(0.34,0.48,0.055),pack,false)
+	_box(body,"Trader head",Vector3(0,1.82,0),Vector3(0.34,0.38,0.32),skin,false)
+	_box(body,"Trader neck",Vector3(0,1.59,0),Vector3(0.16,0.14,0.16),skin,false)
+	_box(body,"Trader cap",Vector3(0,2.03,0),Vector3(0.38,0.12,0.36),trousers,false)
+	_box(body,"Trader left upper arm",Vector3(-0.48,1.28,0),Vector3(0.19,0.49,0.21),coat,false)
+	_box(body,"Trader left forearm",Vector3(-0.52,0.93,-0.03),Vector3(0.16,0.39,0.17),coat,false)
+	_box(body,"Trader right upper arm",Vector3(0.48,1.28,0),Vector3(0.19,0.49,0.21),coat,false)
+	_box(body,"Trader right forearm",Vector3(0.52,0.93,-0.03),Vector3(0.16,0.39,0.17),coat,false)
+	_box(body,"Trader left hand",Vector3(-0.52,0.7,-0.03),Vector3(0.14,0.12,0.14),skin,false)
+	_box(body,"Trader right hand",Vector3(0.52,0.7,-0.03),Vector3(0.14,0.12,0.14),skin,false)
+	for leg_x in [-0.2,0.2]:
+		_box(body,"Trader trousers",Vector3(leg_x,0.43,0),Vector3(0.23,0.68,0.28),trousers,false)
+		_box(body,"Trader boot",Vector3(leg_x,0.09,-0.06),Vector3(0.25,0.16,0.4),mat_gun,false)
+	_box(body,"Trader backpack",Vector3(0,1.28,-0.28),Vector3(0.43,0.54,0.2),pack,false)
 	body.set_script(load("res://scripts/interactable.gd"))
 	body.title = "Trader"
 	body.kind = "trader"
