@@ -4,7 +4,11 @@ extends CharacterBody3D
 @export_range(5.0, 90.0, 1.0) var corpse_lifetime := 24.0
 var health := 65.0
 var speed := 1.55
-var attack_timer := 0.0
+var attack_timer: float = 0.0
+var attack_windup: float = 0.0
+var attack_animation_timer: float = 0.0
+var hit_react_timer: float = 0.0
+var hit_react_side: float = 1.0
 var dead := false
 var player
 var visual_root: Node3D
@@ -113,6 +117,8 @@ func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player):
 		player = null
 	attack_timer = maxf(0.0, attack_timer - delta)
+	attack_animation_timer = maxf(0.0, attack_animation_timer - delta)
+	hit_react_timer = maxf(0.0, hit_react_timer - delta)
 	if player == null:
 		var players := get_tree().get_nodes_in_group("player")
 		if not players.is_empty():
@@ -122,26 +128,63 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 		return
 	var distance: float = global_position.distance_to(player.global_position)
-	if distance < 17.0 and distance > 1.45:
+	if distance < 17.0 and distance > 1.55:
+		attack_windup = 0.0
 		var direction: Vector3 = player.global_position - global_position
 		direction.y = 0.0
 		direction = direction.normalized()
+		# Simple local steering lets the zombie slide along nearby walls instead of
+		# continuously pushing straight into the obstacle. Attacks still require LOS.
+		var space_state := get_world_3d().direct_space_state
+		var obstacle_query := PhysicsRayQueryParameters3D.create(global_position + Vector3(0, 0.9, 0), global_position + Vector3(0, 0.9, 0) + direction * 1.15)
+		obstacle_query.exclude = [get_rid()]
+		var obstacle_hit: Dictionary = space_state.intersect_ray(obstacle_query)
+		if not obstacle_hit.is_empty() and obstacle_hit.get("collider") != player:
+			var side: Vector3 = Vector3(-direction.z, 0.0, direction.x)
+			if get_instance_id() % 2 == 0:
+				side = -side
+			direction = (side * 0.82 + direction * 0.18).normalized()
 		velocity.x = direction.x * speed
 		velocity.z = direction.z * speed
-		look_at(Vector3(player.global_position.x, global_position.y, player.global_position.z))
-	elif distance <= 1.45:
+		look_at(Vector3(global_position.x + direction.x, global_position.y, global_position.z + direction.z))
+	elif distance <= 1.55:
 		velocity.x = 0.0
 		velocity.z = 0.0
-		if attack_timer <= 0.0:
-			player.hurt(12.0 if runner else 7.0)
-			attack_timer = 1.25 if runner else 1.7
+		if _has_line_of_sight_to_player():
+			if attack_windup > 0.0:
+				attack_windup = maxf(0.0, attack_windup - delta)
+				attack_animation_timer = maxf(attack_animation_timer, attack_windup)
+				if attack_windup <= 0.0:
+					if global_position.distance_to(player.global_position) <= 1.8 and _has_line_of_sight_to_player() and attack_timer <= 0.0:
+						player.hurt(12.0 if runner else 7.0)
+						attack_timer = 1.35 if runner else 1.8
+					else:
+						attack_timer = 0.35
+			elif attack_timer <= 0.0:
+				attack_windup = 0.42 if runner else 0.5
+				attack_animation_timer = attack_windup
+		else:
+			attack_windup = 0.0
 	else:
+		attack_windup = 0.0
 		velocity.x = move_toward(velocity.x, 0.0, speed * delta)
 		velocity.z = move_toward(velocity.z, 0.0, speed * delta)
 	if not is_on_floor():
 		velocity.y -= 18.0 * delta
 	move_and_slide()
 	_animate_body(delta)
+
+func _has_line_of_sight_to_player() -> bool:
+	if not is_instance_valid(player):
+		return false
+	var from: Vector3 = global_position + Vector3(0, 1.0, 0)
+	var to: Vector3 = player.global_position + Vector3(0, 1.0, 0)
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	query.exclude = [get_rid()]
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	return not hit.is_empty() and hit.get("collider") == player
 
 func _animate_body(delta: float) -> void:
 	animation_clock += delta * (8.5 if runner else 4.5)
@@ -152,12 +195,60 @@ func _animate_body(delta: float) -> void:
 		right_leg.rotation.x = -gait * (0.58 if runner else 0.34)
 		left_arm.rotation.x = -gait * 0.42 - (0.3 if runner else 0.12)
 		right_arm.rotation.x = gait * 0.42 - (0.3 if runner else 0.12)
-		torso.rotation.z = sin(animation_clock * 0.5) * (0.07 if runner else 0.035)
+		if attack_animation_timer > 0.0:
+			var attack_blend: float = clampf(attack_animation_timer / 0.5, 0.0, 1.0)
+			left_arm.rotation.x -= 0.9 * attack_blend
+			right_arm.rotation.x -= 1.05 * attack_blend
+		if hit_react_timer > 0.0:
+			var flinch: float = hit_react_timer / 0.28
+			left_arm.rotation.z = hit_react_side * 0.65 * flinch
+			right_arm.rotation.z = -hit_react_side * 0.65 * flinch
+		else:
+			left_arm.rotation.z = 0.0
+			right_arm.rotation.z = 0.0
+		torso.rotation.z = sin(animation_clock * 0.5) * (0.07 if runner else 0.035) + (hit_react_side * 0.12 * hit_react_timer / 0.28)
 		torso.rotation.x = -0.10 if runner and moving else 0.035
 
-func take_damage(amount: float) -> void:
+func _spawn_hit_particles(hit_position: Vector3) -> void:
+	var particles := CPUParticles3D.new()
+	particles.name = "HitImpact"
+	particles.amount = 9 if not runner else 12
+	particles.lifetime = 0.22
+	particles.one_shot = true
+	particles.explosiveness = 1.0
+	particles.direction = Vector3(0.0, 0.25, 1.0)
+	particles.spread = 55.0
+	particles.initial_velocity_min = 0.35
+	particles.initial_velocity_max = 1.6
+	particles.gravity = Vector3(0.0, -2.5, 0.0)
+	particles.emitting = true
+	var process_material := ParticleProcessMaterial.new()
+	process_material.color = Color("#6f2822")
+	process_material.scale_min = 0.025
+	process_material.scale_max = 0.065
+	particles.process_material = process_material
+	var particle_mesh := SphereMesh.new()
+	particle_mesh.radius = 0.025
+	particle_mesh.height = 0.05
+	particles.mesh = particle_mesh
+	particles.global_position = hit_position
+	get_tree().current_scene.add_child(particles)
+	var cleanup := Timer.new()
+	cleanup.one_shot = true
+	cleanup.wait_time = 0.65
+	cleanup.timeout.connect(particles.queue_free)
+	particles.add_child(cleanup)
+	cleanup.start()
+
+func take_damage(amount: float, hit_position: Vector3 = Vector3.ZERO, is_headshot: bool = false) -> void:
 	if dead or not is_finite(amount) or amount <= 0.0:
 		return
+	hit_react_timer = 0.28
+	hit_react_side = -1.0 if randf() < 0.5 else 1.0
+	attack_windup = 0.0
+	attack_animation_timer = 0.0
+	if hit_position != Vector3.ZERO:
+		_spawn_hit_particles(hit_position)
 	health = maxf(0.0, health - amount)
 	if health <= 0.0:
 		dead = true
