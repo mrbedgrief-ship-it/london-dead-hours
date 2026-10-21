@@ -13,6 +13,7 @@ var props: Node3D
 var ui_layer: CanvasLayer
 var root_ui: Control
 var hud: Label
+var crosshair: Label
 var prompt_label: Label
 var message_label: Label
 var panel: PanelContainer
@@ -256,6 +257,17 @@ func _create_ui() -> void:
 	message_label.add_theme_font_size_override("font_size",18)
 	message_label.add_theme_color_override("font_color",Color("#e4c18c"))
 	root_ui.add_child(message_label)
+	crosshair = Label.new()
+	crosshair.name = "Crosshair"
+	crosshair.text = "+"
+	crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	crosshair.position = Vector2(-8, -18)
+	crosshair.size = Vector2(16, 36)
+	crosshair.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	crosshair.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	crosshair.add_theme_font_size_override("font_size", 27)
+	crosshair.add_theme_color_override("font_color", Color("#e9e5d7"))
+	root_ui.add_child(crosshair)
 
 func _panel(title: String) -> VBoxContainer:
 	if panel != null and is_instance_valid(panel):
@@ -445,8 +457,10 @@ func _process(delta: float) -> void:
 	if message_time > 0.0:
 		message_time -= delta
 		if message_time <= 0.0 and message_label: message_label.text = ""
-	if player != null and not paused:
+	if player != null and not paused and is_instance_valid(player):
 		update_hud(player)
+	if crosshair != null:
+		crosshair.visible = player != null and is_instance_valid(player) and not paused and not menu_open and not player.dead
 
 func show_game_over() -> void:
 	paused = true
@@ -459,35 +473,105 @@ func show_game_over() -> void:
 	_button("MAIN MENU",Callable(self,"show_main_menu"))
 
 func save_game() -> void:
-	if player == null: notify("No expedition to save."); return
-	var data := {"money":player.money,"health":player.health,"hunger":player.hunger,"thirst":player.thirst,"inventory":player.inventory,"weapon":player.weapon,"ammo":player.ammo,"reserve":player.reserve,"position":[player.global_position.x,player.global_position.y,player.global_position.z]}
-	var file := FileAccess.open("user://dead_hours_save.json",FileAccess.WRITE)
-	if file == null: notify("Save failed."); return
-	file.store_string(JSON.stringify(data))
+	if player == null or not is_instance_valid(player):
+		notify("Save failed: there is no active expedition.")
+		return
+	var safe_inventory: Dictionary = {}
+	for id in ["food", "water", "medkit", "scrap"]:
+		safe_inventory[id] = clampi(int(player.inventory.get(id, 0)), 0, 9999)
+	var safe_ammo: Dictionary = {}
+	var safe_reserve: Dictionary = {}
+	for name in ["Pistol", "Shotgun", "Rifle"]:
+		var capacity := int(player.magazine.get(name, 0))
+		safe_ammo[name] = clampi(int(player.ammo.get(name, 0)), 0, maxi(0, capacity))
+		safe_reserve[name] = clampi(int(player.reserve.get(name, 0)), 0, 99999)
+	var saved_weapon := str(player.weapon)
+	if not ["Pistol", "Shotgun", "Rifle"].has(saved_weapon):
+		saved_weapon = "Pistol"
+	var pos := player.global_position
+	var data := {
+		"version": 1,
+		"money": clampi(int(player.money), 0, 1000000000),
+		"health": clampf(float(player.health), 0.0, 100.0),
+		"hunger": clampf(float(player.hunger), 0.0, 100.0),
+		"thirst": clampf(float(player.thirst), 0.0, 100.0),
+		"inventory": safe_inventory,
+		"weapon": saved_weapon,
+		"ammo": safe_ammo,
+		"reserve": safe_reserve,
+		"position": [pos.x, pos.y, pos.z]
+	}
+	var json_text := JSON.stringify(data)
+	var file := FileAccess.open("user://dead_hours_save.json", FileAccess.WRITE)
+	if file == null:
+		notify("Save failed: could not open the save file (error %d)." % FileAccess.get_open_error())
+		return
+	file.store_string(json_text)
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		notify("Save failed: the file could not be written (error %d)." % write_error)
+		return
 	notify("Game saved.")
 
 func load_game() -> void:
-	var file := FileAccess.open("user://dead_hours_save.json",FileAccess.READ)
+	var path := "user://dead_hours_save.json"
+	if not FileAccess.file_exists(path):
+		notify("No save found. Start a NEW EXPEDITION first.")
+		return
+	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		start_new_game()
-		notify("No save found — starting a new expedition.")
+		notify("Load failed: could not open the save file (error %d)." % FileAccess.get_open_error())
 		return
 	var parsed = JSON.parse_string(file.get_as_text())
 	file.close()
+	if typeof(parsed) != TYPE_DICTIONARY:
+		notify("Load failed: the save file is invalid or damaged.")
+		return
+	if not parsed.has("version") or int(parsed.get("version", 0)) != 1:
+		notify("Load failed: this save format is not supported.")
+		return
+
 	start_new_game()
-	if typeof(parsed) == TYPE_DICTIONARY:
-		player.money = int(parsed.get("money",35))
-		player.health = float(parsed.get("health",100))
-		player.hunger = float(parsed.get("hunger",100))
-		player.thirst = float(parsed.get("thirst",100))
-		player.inventory = parsed.get("inventory",player.inventory)
-		player.weapon = str(parsed.get("weapon","Pistol"))
-		player.ammo = parsed.get("ammo",player.ammo)
-		player.reserve = parsed.get("reserve",player.reserve)
-		var pos = parsed.get("position",[-42,0,0])
-		if pos is Array and pos.size() == 3: player.global_position = Vector3(float(pos[0]),float(pos[1]),float(pos[2]))
+	player.money = int(_bounded_number(parsed.get("money", 35), 35.0, 0.0, 1000000000.0))
+	player.health = _bounded_number(parsed.get("health", 100), 100.0, 1.0, 100.0)
+	player.hunger = _bounded_number(parsed.get("hunger", 100), 100.0, 0.0, 100.0)
+	player.thirst = _bounded_number(parsed.get("thirst", 100), 100.0, 0.0, 100.0)
+
+	var saved_inventory = parsed.get("inventory", {})
+	if saved_inventory is Dictionary:
+		for id in ["food", "water", "medkit", "scrap"]:
+			if saved_inventory.has(id):
+				player.inventory[id] = int(_bounded_number(saved_inventory[id], int(player.inventory.get(id, 0)), 0.0, 9999.0))
+
+	var saved_weapon := str(parsed.get("weapon", "Pistol"))
+	if ["Pistol", "Shotgun", "Rifle"].has(saved_weapon):
+		player.weapon = saved_weapon
+	for name in ["Pistol", "Shotgun", "Rifle"]:
+		var capacity := int(player.magazine[name])
+		var saved_ammo = parsed.get("ammo", {})
+		if saved_ammo is Dictionary and saved_ammo.has(name):
+			player.ammo[name] = int(_bounded_number(saved_ammo[name], int(player.ammo[name]), 0.0, float(capacity)))
+		var saved_reserve = parsed.get("reserve", {})
+		if saved_reserve is Dictionary and saved_reserve.has(name):
+			player.reserve[name] = int(_bounded_number(saved_reserve[name], int(player.reserve[name]), 0.0, 99999.0))
+
+	var saved_position = parsed.get("position", [])
+	if saved_position is Array and saved_position.size() == 3:
+		var x := _bounded_number(saved_position[0], -42.0, -1000.0, 1000.0)
+		var y := _bounded_number(saved_position[1], 0.0, -10.0, 1000.0)
+		var z := _bounded_number(saved_position[2], 0.0, -1000.0, 1000.0)
+		player.global_position = Vector3(x, y, z)
+	player._refresh_weapon_model()
 	notify("Progress loaded.")
+
+func _bounded_number(value, fallback: float, minimum: float, maximum: float) -> float:
+	if typeof(value) != TYPE_INT and typeof(value) != TYPE_FLOAT:
+		return fallback
+	var number := float(value)
+	if not is_finite(number):
+		return fallback
+	return clampf(number, minimum, maximum)
 
 func quit_game() -> void:
 	get_tree().quit()
