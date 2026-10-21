@@ -212,7 +212,7 @@ func _create_world() -> void:
 			_building(Vector3(x,0,z), Vector3(15.0,8.5,10.0), mat_brick if int(x) % 2 == 0 else mat_dark_brick, (x == 27.0 and z == -22.0) or (x == 44.0 and z == 22.0))
 	for x in [-22.0,22.0]:
 		for z in [-39.0,-18.0,3.0,26.0,43.0]:
-			_building(Vector3(x,0,z), Vector3(10.0,8.0,15.0), mat_brick, x == -22.0 and z == 22.0)
+			_building(Vector3(x,0,z), Vector3(10.0,8.0,15.0), mat_brick, x == -22.0 and z == 26.0)
 	# A narrow alley with service walls and a lit doorway.
 	_box(self,"Alley wall",Vector3(-3,2.1,-31),Vector3(0.7,4.2,12),mat_dark_brick)
 	_box(self,"Alley wall",Vector3(3,2.1,-31),Vector3(0.7,4.2,12),mat_dark_brick)
