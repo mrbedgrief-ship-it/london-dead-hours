@@ -52,3 +52,24 @@ No third-party character, animation, weapon, vehicle, furniture or environment p
 
 ## Attribution and license maintenance
 If an external asset pack is added in a future pass, record the exact asset/page, creator, license version, attribution text (if any), included file paths and any redistribution restrictions here before merging it into the game.
+
+## Candidate packs checked for this milestone — not integrated
+
+The official pack pages were checked for the published asset counts/formats and license statements. The actual ZIP archives could not be downloaded or inspected in the current environment (outbound downloads fail with DNS/network errors), so no model, animation, or sound from these packs is present in the repository. They must not be treated as integrated assets.
+
+### Character and animation candidates
+- **Zombie Apocalypse Kit — Quaternius** — https://quaternius.com/packs/zombieapocalypsekit.html — official page advertises 60 models, including animated characters/enemies and vehicles; FBX, OBJ, Blend and glTF; page displays CC0/free personal and commercial use. Not downloaded or integrated.
+- **Animated Zombie Pack — Quaternius** — https://quaternius.com/packs/animatedzombie.html — official page advertises two textured animated zombie models; FBX, OBJ and Blend; page displays CC0/free personal and commercial use. Not downloaded or integrated.
+- **Universal Animation Library 2 — Quaternius** — https://quaternius.com/packs/universalanimationlibrary2.html — official page advertises 130+ humanoid animations, with FBX, GLB and Blend and an engine-compatible export option; page states CC0/free personal, educational and commercial use. Actual animation names/skeleton compatibility were not inspected because the archive was unavailable. Not downloaded or integrated.
+
+### Environment candidates
+- **Downtown City MegaKit — Quaternius** — https://quaternius.com/packs/downtowncitymegakit.html — official page advertises 315 modular city pieces, FBX, Blend and glTF, plus a Godot source project option; page states CC0/free personal, educational and commercial use. Not downloaded or integrated.
+- **Modular Buildings — Kenney** — https://kenney.nl/assets/modular-buildings — official page lists 100+ files and Creative Commons CC0. The archive contents and model style were not inspected. Not downloaded or integrated.
+- **Ultimate Buildings Pack — Quaternius** — https://quaternius.com/packs/ultimatetexturedbuildings.html — official page advertises 76 modular building models in FBX, OBJ and Blend and states CC0/free personal and commercial use. Not downloaded or integrated.
+
+### Audio candidates
+- **RPG Audio — Kenney** — https://kenney.nl/assets/rpg-audio — official page lists 50 files and Creative Commons CC0. Not downloaded or integrated.
+- **Impact Sounds — Kenney** — https://kenney.nl/assets/impact-sounds — official page lists 130 files and Creative Commons CC0. Not downloaded or integrated.
+- **Interface Sounds — Kenney** — https://kenney.nl/assets/interface-sounds — official page lists 100 files and Creative Commons CC0. Not downloaded or integrated.
+
+No sound files have been added, and the current project does not yet play weapon, zombie, player, ambience or UI sound effects. The muzzle flash and hit particles described in the README are procedural visual effects, not imported audio/asset-pack content.
