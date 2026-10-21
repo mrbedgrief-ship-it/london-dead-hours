@@ -231,8 +231,8 @@ func _spawn_hit_particles(hit_position: Vector3) -> void:
 	particle_mesh.radius = 0.025
 	particle_mesh.height = 0.05
 	particles.mesh = particle_mesh
-	particles.global_position = hit_position
 	get_tree().current_scene.add_child(particles)
+	particles.global_position = hit_position
 	var cleanup := Timer.new()
 	cleanup.one_shot = true
 	cleanup.wait_time = 0.65
