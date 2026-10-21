@@ -140,7 +140,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("inventory"):
-		if not dead and not game.paused:
+		if not dead and (not game.paused or inv_open):
 			game.toggle_inventory()
 		get_viewport().set_input_as_handled()
 		return
