@@ -75,6 +75,15 @@ func _build_camera() -> void:
 	ray.enabled = true
 	ray.add_exception(self)
 	camera.add_child(ray)
+	var feedback_layer := CanvasLayer.new()
+	feedback_layer.name = "DamageFeedbackLayer"
+	add_child(feedback_layer)
+	damage_overlay = ColorRect.new()
+	damage_overlay.name = "DamageFlash"
+	damage_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	damage_overlay.color = Color(0.42, 0.025, 0.015, 0.0)
+	feedback_layer.add_child(damage_overlay)
 
 func _build_weapon_models() -> void:
 	weapon_root = Node3D.new()
