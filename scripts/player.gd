@@ -332,9 +332,6 @@ func _fire() -> void:
 		game.notify("Magazine empty — press R to reload")
 		return
 
-	if int(ammo[weapon]) <= 0:
-		game.notify("Magazine empty — press R to reload")
-		return
 	ammo[weapon] = int(ammo[weapon]) - 1
 	fire_delay = float(config["fire_interval"])
 	weapon_kick = 0.13 if weapon == "Shotgun" else (0.055 if weapon == "Rifle" else 0.075)
