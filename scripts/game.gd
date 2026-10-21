@@ -311,14 +311,6 @@ func _build_shop_shell(center: Vector3, size: Vector3, material: Material, face:
 		_box(interior,"Counter display glass",Vector3(0,1.4,face*2.5),Vector3(2.6,0.18,0.55),mat_glass,false)
 		_box(interior,"Market drinks fridge",Vector3(5.3,1.1,face*2.1),Vector3(1.05,2.2,0.85),shelf_metal)
 		_box(interior,"Fridge door",Vector3(5.3,1.1,face*2.1+face*0.44),Vector3(0.88,1.95,0.05),mat_glass,false)
-	else:
-		for side in [-1.0,1.0]:
-			_box(interior,"Gun shop display rack",Vector3(side*3.8,1.1,inside_z),Vector3(1.0,2.2,3.6),shelf_metal)
-			for level in [0.65,1.25,1.85]:
-				_box(interior,"Gun shop rack rail",Vector3(side*3.22,level,inside_z),Vector3(0.12,0.06,3.3),mat_metal,false)
-		_box(interior,"Gun shop service counter",Vector3(0,0.68,face*2.55),Vector3(4.2,1.36,0.85),mat_wood)
-		_box(interior,"Gun shop locked display",Vector3(0,1.2,face*0.1),Vector3(1.6,1.5,2.0),shelf_metal)
-		_box(interior,"Locked display glass",Vector3(0,1.25,face*0.62),Vector3(1.45,1.15,0.05),mat_glass,false)
 	elif center.x < 0.0:
 		for side in [-1.0,1.0]:
 			_box(interior,"Gun shop display rack",Vector3(side*3.8,1.1,inside_z),Vector3(1.0,2.2,3.6),shelf_metal)
