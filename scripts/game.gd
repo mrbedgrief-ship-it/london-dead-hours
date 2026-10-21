@@ -517,9 +517,11 @@ func _try_spawn_zombie() -> bool:
 			living += 1
 	if living >= zombie_max_alive:
 		return false
-	# Keep the duplicate and loop element explicitly typed: duplicate() can otherwise
-	# erase the Array[Vector3] element type and make point a Variant in Godot 4.
-	var candidates: Array[Vector3] = zombie_spawn_points.duplicate()
+	# Build a typed copy explicitly because duplicate() can lose the array's
+	# element type and leave each spawn point as a Variant in Godot 4.
+	var candidates: Array[Vector3] = []
+	for spawn_point: Vector3 in zombie_spawn_points:
+		candidates.append(spawn_point)
 	for i in range(candidates.size()):
 		var j: int = spawn_rng.randi_range(i, candidates.size() - 1)
 		var temp: Vector3 = candidates[i]
