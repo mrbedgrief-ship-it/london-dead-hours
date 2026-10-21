@@ -30,9 +30,9 @@ const ZOMBIE_TARGET_ALIVE := 6
 const ZOMBIE_MAX_ALIVE := 8
 var zombie_respawn_timer := 0.0
 var zombie_spawn_points: Array[Vector3] = [
-	Vector3(-2,0,-15), Vector3(2,0,15), Vector3(-15,0,-2), Vector3(15,0,2),
-	Vector3(-4,0,-28), Vector3(4,0,28), Vector3(-28,0,4), Vector3(28,0,-4),
-	Vector3(-4,0,38), Vector3(4,0,-38), Vector3(-38,0,-4), Vector3(38,0,4)
+	Vector3(-14,0,0), Vector3(14,0,0), Vector3(0,0,-14), Vector3(0,0,14),
+	Vector3(-14,0,-14), Vector3(14,0,14), Vector3(-14,0,14), Vector3(14,0,-14),
+	Vector3(-4,0,32), Vector3(4,0,-32), Vector3(-32,0,4), Vector3(32,0,-4)
 ]
 var spawn_rng := RandomNumberGenerator.new()
 var onboarding_steps: Array[String] = [
@@ -237,8 +237,8 @@ func _create_world() -> void:
 	_make_trader(Vector3(40,0.7,0))
 	_make_zombie(Vector3(4,0,-3),false)
 	_make_zombie(Vector3(23,0,-7),false)
-	_make_zombie(Vector3(32,0,-23),true)
-	_make_zombie(Vector3(-19,0,8),false)
+	_make_zombie(Vector3(34,0,-7),true)
+	_make_zombie(Vector3(-19,0,13),false)
 	_make_zombie(Vector3(3,0,29),true)
 	_make_zombie(Vector3(41,0,29),false)
 	# Shelter lights mark the two safe destinations.
@@ -564,6 +564,9 @@ func show_main_menu() -> void:
 
 func start_new_game() -> void:
 	if player != null and is_instance_valid(player): player.queue_free()
+	for existing_zombie in get_tree().get_nodes_in_group("zombies"):
+		if is_instance_valid(existing_zombie):
+			existing_zombie.queue_free()
 	trader_stock = {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4, "scrap": 0}
 	for container in get_tree().get_nodes_in_group("searchable_containers"):
 		container.searched = false
@@ -574,6 +577,12 @@ func start_new_game() -> void:
 	player.set_script(load("res://scripts/player.gd"))
 	player.add_to_group("player")
 	add_child(player)
+	_make_zombie(Vector3(4,0,-3),false)
+	_make_zombie(Vector3(23,0,-7),false)
+	_make_zombie(Vector3(34,0,-7),true)
+	_make_zombie(Vector3(-19,0,13),false)
+	_make_zombie(Vector3(3,0,29),true)
+	_make_zombie(Vector3(41,0,29),false)
 	menu_open = false
 	paused = false
 	if panel: panel.queue_free()
