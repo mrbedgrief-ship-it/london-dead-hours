@@ -28,17 +28,22 @@ A compact, atmospheric first-person survival-horror game set in a fictionalized 
 - **Esc** — pause/resume
 
 ## Current implementation
-- Procedural London-inspired street environment and buildings.
+- Preserved the original compact playable street layout, upgraded with dark brick facades, framed/recessed and selectively boarded windows, blocked entrances, cornices, parapets, drainpipes and masonry plinths.
+- Cold overcast lighting, restrained fog, wet-road sheen, kerbs, faded yellow street-edge markings, drains, autumn leaves, detailed abandoned vehicles and static street lamps.
+- Reusable multi-part loot visuals (wooden crates, metal cases, cabinets and shop shelves) while retaining each original searchable interaction body.
+- A recognizable segmented human trader in practical survival clothing, backpack and boots; original trader interaction/collision body retained.
+- Clear health, hunger and thirst bars; cash and weapon/ammunition readout; dark inventory panel with item categories, descriptions and USE actions.
+- Brief timed first-start control hints and a Controls page accessible from the pause menu.
 - First-person movement and clamped mouse-look; mouse capture is restored on resume and recaptured with a gameplay click if needed.
 - Distinct visible pistol, shotgun and rifle models, aim-down-sights FOV, centered crosshair, hitscan shooting, per-weapon magazines/reserves, and reload timers.
 - Three weapons with separate damage, range, fire rate, magazine capacity, reserve ammunition, reload time, and shotgun pellet spread.
-- Zombies with health and one-shot-at-a-time hitscan damage; they stop pursuing and attacking while paused and stop permanently on death.
+- Humanoid segmented zombies with separate head, torso, arms, hands, legs and boots; simple procedural gait, distinct runner appearance, and the original collision/damage/death logic. Visual meshes do not have collision, so weapon rays hit the gameplay body.
 - Searchable loot containers, food/water/medical supplies, survival meters.
 - Trader UI for purchasing and selling.
-- Inventory, pause, game-over and save/load interface.
+- Inventory, pause, game-over and save/load interface. Food, water and medical kits apply real hunger/thirst/health effects and consume one item; trading refreshes stock, cash and prices after successful transactions.
 
 ## Limitations
-This is an early playable foundation. The environment and props are procedurally built rather than high-resolution authored models. Interiors are compact modular spaces. Zombie navigation is direct pursuit rather than full navigation-mesh pathfinding. Audio, full animation, comprehensive world-state persistence and Windows export presets may not be present yet. Source files have not been launched in a local Godot editor in the repository-writing environment; run the first local test below before treating the project as verified.
+This remains a compact procedural survival-game prototype rather than a high-resolution asset-based production. Facade dressing and character/prop models use built-in geometry; the interiors have not yet been rebuilt into fully explorable furnished rooms. Zombies use direct pursuit rather than navigation-mesh pathfinding and procedural limb motion rather than skeletal animation. Audio, full animation, comprehensive world-state persistence and Windows export presets may not be present yet. Source files were not launched in Godot in the repository-writing environment; run the local validation checklist below before treating the changes as runtime-verified.
 
 ## Save data
 The game stores `user://dead_hours_save.json` in Godot's user-data directory. Save data includes version, money, health, hunger, thirst, inventory quantities (`food`, `water`, `medkit`, `scrap`), selected weapon, each weapon's magazine and reserve ammunition, and player position. Invalid/missing values are validated or defaulted on load; a missing save does not start a false load.
