@@ -309,6 +309,8 @@ func _button(label: String, action: Callable, parent: VBoxContainer = null) -> v
 func show_main_menu() -> void:
 	menu_open = true
 	paused = true
+	if player != null and is_instance_valid(player):
+		player.aiming = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("LONDON: DEAD HOURS")
 	var intro := Label.new()
@@ -348,10 +350,13 @@ func toggle_pause() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
 	paused = true
+	if player != null and is_instance_valid(player):
+		player.aiming = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("PAUSED")
 	_button("RESUME",Callable(self,"toggle_pause"))
 	_button("SAVE GAME",Callable(self,"save_game"))
+	_button("LOAD GAME",Callable(self,"load_game"))
 	_button("MAIN MENU",Callable(self,"show_main_menu"))
 	_button("QUIT",Callable(self,"quit_game"))
 
@@ -365,6 +370,7 @@ func toggle_inventory(force_close := false) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
 	player.inv_open = true
+	player.aiming = false
 	paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("FIELD INVENTORY")
@@ -392,6 +398,7 @@ func toggle_inventory(force_close := false) -> void:
 
 func open_trader() -> void:
 	if paused or player == null: return
+	player.aiming = false
 	paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("THE TRADER")
@@ -464,6 +471,8 @@ func _process(delta: float) -> void:
 
 func show_game_over() -> void:
 	paused = true
+	if player != null and is_instance_valid(player):
+		player.aiming = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("YOU DID NOT SURVIVE")
 	var label := Label.new()
