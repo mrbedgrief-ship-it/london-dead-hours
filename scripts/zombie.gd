@@ -56,7 +56,7 @@ func _physics_process(delta: float) -> void:
 	if player.dead:
 		velocity = Vector3.ZERO
 		return
-	var distance := global_position.distance_to(player.global_position)
+	var distance: float = global_position.distance_to(player.global_position)
 	if distance < 17.0 and distance > 1.45:
 		var direction: Vector3 = player.global_position - global_position
 		direction.y = 0.0
