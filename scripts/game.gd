@@ -107,7 +107,6 @@ func _create_world() -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("#a0a7a5")
 	env.ambient_light_energy = 0.72
-	env.ambient_light_color = Color("#a4aaa8")
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
 	env.fog_light_color = Color("#818987")
@@ -161,8 +160,31 @@ func _create_world() -> void:
 	_box(self,"Alley wall",Vector3(3,2.1,-31),Vector3(0.7,4.2,12),mat_dark_brick)
 	_box(self,"Red telephone box",Vector3(-5,1.2,3),Vector3(0.9,2.4,0.9),_material(Color("#782e2a"),0.7))
 	_box(self,"Telephone glass",Vector3(-5,1.35,2.52),Vector3(0.48,1.55,0.025),mat_glass,false)
-	_box(self,"Abandoned car",Vector3(13,0.75,-3),Vector3(4.6,1.5,2.0),_material(Color("#42484a"),0.75))
-	_box(self,"Abandoned van",Vector3(-14,0.8,15),Vector3(5.3,1.6,2.4),_material(Color("#56534b"),0.85))
+	var car_paint := _material(Color("#42484a"),0.75)
+	var vehicle_glass := _material(Color("#202b2d"),0.22)
+	var rubber := _material(Color("#202221"),0.98)
+	_box(self,"Abandoned car",Vector3(13,0.75,-3),Vector3(4.6,1.5,2.0),car_paint)
+	_box(self,"Car roof",Vector3(13.0,1.47,-3.0),Vector3(2.05,0.42,1.65),car_paint,false)
+	_box(self,"Car windscreen",Vector3(14.05,1.42,-3.0),Vector3(0.045,0.43,1.43),vehicle_glass,false)
+	_box(self,"Car rear glass",Vector3(11.96,1.42,-3.0),Vector3(0.045,0.38,1.40),vehicle_glass,false)
+	for wheel_x in [11.65,14.35]:
+		for wheel_z in [-1.97,-4.03]:
+			_box(self,"Car tyre",Vector3(wheel_x,0.35,wheel_z),Vector3(0.68,0.52,0.20),rubber,false)
+	_box(self,"Car headlight",Vector3(15.31,0.84,-3.55),Vector3(0.05,0.22,0.34),_material(Color("#aaa58c"),0.65),false)
+	_box(self,"Car headlight",Vector3(15.31,0.84,-2.45),Vector3(0.05,0.22,0.34),_material(Color("#aaa58c"),0.65),false)
+	var van_paint := _material(Color("#56534b"),0.85)
+	_box(self,"Abandoned van",Vector3(-14,0.8,15),Vector3(5.3,1.6,2.4),van_paint)
+	_box(self,"Van roof",Vector3(-14,1.62,15),Vector3(4.6,0.22,2.18),van_paint,false)
+	_box(self,"Van side window",Vector3(-13.0,1.2,13.78),Vector3(1.0,0.45,0.035),vehicle_glass,false)
+	_box(self,"Van side window",Vector3(-15.0,1.2,13.78),Vector3(1.0,0.45,0.035),vehicle_glass,false)
+	for wheel_x in [-15.7,-12.3]:
+		for wheel_z in [13.72,16.28]:
+			_box(self,"Van tyre",Vector3(wheel_x,0.36,wheel_z),Vector3(0.72,0.52,0.18),rubber,false)
+	_box(self,"Van rear doors",Vector3(-16.66,0.86,15),Vector3(0.045,1.1,1.85),mat_metal,false)
+	for lamp_pos in [Vector3(-30,0,7.0),Vector3(19,0,-7.0),Vector3(37,0,7.0)]:
+		_box(self,"Street lamp post",lamp_pos+Vector3(0,2.5,0),Vector3(0.12,5.0,0.12),mat_metal,false)
+		_box(self,"Street lamp arm",lamp_pos+Vector3(0.35,4.75,0),Vector3(0.8,0.10,0.10),mat_metal,false)
+		_box(self,"Street lamp housing",lamp_pos+Vector3(0.7,4.65,0),Vector3(0.42,0.18,0.30),_material(Color("#8b887b"),0.6),false)
 	_box(self,"Rubbish bin",Vector3(6,0.65,-11),Vector3(0.9,1.3,0.8),mat_metal)
 	_box(self,"Barricade",Vector3(-7,0.8,25),Vector3(3.5,1.3,0.5),mat_wood)
 	_box(self,"Makeshift sandbags",Vector3(-7,0.45,24.4),Vector3(3.2,0.7,0.65),_material(Color("#79705d"),1))
