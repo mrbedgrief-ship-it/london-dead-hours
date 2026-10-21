@@ -14,6 +14,9 @@ var ui_layer: CanvasLayer
 var root_ui: Control
 var hud: Label
 var crosshair: Label
+var health_bar: ProgressBar
+var hunger_bar: ProgressBar
+var thirst_bar: ProgressBar
 var prompt_label: Label
 var message_label: Label
 var panel: PanelContainer
@@ -21,6 +24,15 @@ var panel_content: VBoxContainer
 var paused := false
 var menu_open := true
 var message_time := 0.0
+var onboarding_index := 0
+var onboarding_timer := 0.0
+var onboarding_steps: Array[String] = [
+	"WASD move  •  Mouse look  •  Shift sprint",
+	"E search / interact  •  LMB fire  •  RMB aim",
+	"R reload  •  1 / 2 / 3 switch weapons  •  Tab inventory",
+	"Food restores hunger, water restores thirst, medical kits restore health.",
+	"Follow the warm lights to find shelter and the trader."
+]
 var trader_stock := {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4}
 var item_data := {
 	"food": {"name":"Canned Food", "buy":8, "sell":4, "desc":"Restores hunger."},
@@ -241,6 +253,11 @@ func _create_ui() -> void:
 	hud.add_theme_font_size_override("font_size",18)
 	hud.add_theme_color_override("font_color",Color("#e1e2dc"))
 	root_ui.add_child(hud)
+	hud.add_theme_font_size_override("font_size",16)
+	var bar_y := 96.0
+	health_bar = _make_status_bar("HEALTH",Vector2(22,bar_y),Color("#a65b51"))
+	hunger_bar = _make_status_bar("HUNGER",Vector2(22,bar_y+28),Color("#b08b51"))
+	thirst_bar = _make_status_bar("THIRST",Vector2(22,bar_y+56),Color("#668e9a"))
 	prompt_label = Label.new()
 	prompt_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	prompt_label.position = Vector2(-170,-75)
@@ -268,6 +285,31 @@ func _create_ui() -> void:
 	crosshair.add_theme_font_size_override("font_size", 27)
 	crosshair.add_theme_color_override("font_color", Color("#e9e5d7"))
 	root_ui.add_child(crosshair)
+
+func _make_status_bar(bar_name: String, pos: Vector2, fill_color: Color) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.name = bar_name
+	bar.position = pos
+	bar.size = Vector2(210,17)
+	bar.min_value = 0.0
+	bar.max_value = 100.0
+	bar.show_percentage = false
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color("#202626")
+	background.set_corner_radius_all(2)
+	bar.add_theme_stylebox_override("background",background)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = fill_color
+	fill.set_corner_radius_all(2)
+	bar.add_theme_stylebox_override("fill",fill)
+	root_ui.add_child(bar)
+	var caption := Label.new()
+	caption.text = bar_name
+	caption.position = pos + Vector2(218,-2)
+	caption.add_theme_font_size_override("font_size",12)
+	caption.add_theme_color_override("font_color",Color("#c8c8bf"))
+	root_ui.add_child(caption)
+	return bar
 
 func _panel(title: String) -> VBoxContainer:
 	if panel != null and is_instance_valid(panel):
@@ -334,7 +376,9 @@ func start_new_game() -> void:
 	if panel: panel.queue_free()
 	panel = null
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	notify("Find supplies. The trader is marked by a warm light to the east.")
+	onboarding_index = 0
+	onboarding_timer = 1.0
+	notify("SOHO, 04:17 AM. Search for supplies; warm lights mark shelter and the trader.")
 	update_hud(player)
 
 func toggle_pause() -> void:
@@ -355,10 +399,19 @@ func toggle_pause() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("PAUSED")
 	_button("RESUME",Callable(self,"toggle_pause"))
+	_button("CONTROLS",Callable(self,"show_controls"))
 	_button("SAVE GAME",Callable(self,"save_game"))
 	_button("LOAD GAME",Callable(self,"load_game"))
 	_button("MAIN MENU",Callable(self,"show_main_menu"))
 	_button("QUIT",Callable(self,"quit_game"))
+
+func show_controls() -> void:
+	var c := _panel("FIELD CONTROLS")
+	var controls := Label.new()
+	controls.text = "W A S D  —  Move\nMouse  —  Look around\nShift  —  Sprint\nE  —  Search / interact / trade\nLeft mouse  —  Fire\nRight mouse  —  Aim\nR  —  Reload\n1 / 2 / 3  —  Pistol / shotgun / rifle\nTab  —  Inventory\nEsc  —  Pause / close a panel"
+	controls.add_theme_font_size_override("font_size",16)
+	c.add_child(controls)
+	_button("BACK TO PAUSE MENU",Callable(self,"toggle_pause"))
 
 func toggle_inventory(force_close := false) -> void:
 	if player == null or paused and not player.inv_open: return
@@ -375,26 +428,39 @@ func toggle_inventory(force_close := false) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("FIELD INVENTORY")
 	var money_label := Label.new()
-	money_label.text = "Cash: £" + str(player.money) + "     Health " + str(int(player.health)) + " / 100"
+	money_label.text = "CASH  £" + str(player.money) + "     HEALTH  " + str(int(player.health)) + " / 100"
+	money_label.add_theme_font_size_override("font_size",16)
+	money_label.add_theme_color_override("font_color",Color("#e3c49a"))
 	c.add_child(money_label)
+	var item_count := 0
 	for id in player.inventory.keys():
 		var count := int(player.inventory[id])
 		if count > 0:
+			item_count += count
+			var data: Dictionary = item_data.get(id,{"name":id,"desc":"A recovered item.","category":"SUPPLY"})
 			var row := HBoxContainer.new()
 			var label := Label.new()
-			label.text = str(item_data.get(id,{"name":id}).name) + "  × " + str(count)
+			label.text = "%s  × %d\n%s  ·  %s" % [str(data.get("name",id)),count,str(data.get("category","SUPPLY")),str(data.get("desc",""))]
+			label.custom_minimum_size = Vector2(335,48)
 			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			label.add_theme_font_size_override("font_size",14)
 			row.add_child(label)
-			if id in ["food","water","medkit"]:
+			if id in ["food","food_tin","water","medkit"]:
 				var use := Button.new()
 				use.text = "USE"
-				use.pressed.connect(Callable(player,"use_item").bind(id))
+				use.custom_minimum_size = Vector2(76,42)
+				use.pressed.connect(Callable(player,"use_item").bind("food" if id == "food_tin" else id))
 				row.add_child(use)
 			c.add_child(row)
+	if item_count == 0:
+		var empty := Label.new()
+		empty.text = "Your pack is empty. Search crates, shops and abandoned vehicles."
+		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		c.add_child(empty)
 	var equip_label := Label.new()
-	equip_label.text = "Weapons: 1 Pistol  •  2 Shotgun  •  3 Rifle"
+	equip_label.text = "1 PISTOL  ·  2 SHOTGUN  ·  3 RIFLE"
 	c.add_child(equip_label)
-	_button("CLOSE  [TAB]",Callable(self,"toggle_inventory"))
+	_button("CLOSE  [TAB / ESC]",Callable(self,"toggle_inventory"))
 
 func open_trader() -> void:
 	if paused or player == null: return
@@ -458,9 +524,22 @@ func notify(value: String) -> void:
 
 func update_hud(p: CharacterBody3D) -> void:
 	if hud == null: return
-	hud.text = "LONDON  /  DEAD HOURS\nHP  %d   HUNGER  %d   THIRST  %d\nCASH  £%d\n%s   %d / %d  |  RESERVE %d" % [int(p.health),int(p.hunger),int(p.thirst),p.money,p.weapon,int(p.ammo[p.weapon]),int(p.magazine[p.weapon]),int(p.reserve[p.weapon])]
+	hud.text = "LONDON  /  DEAD HOURS\nCASH  £%d\n%s   %d / %d  |  RESERVE %d" % [p.money,p.weapon,int(p.ammo[p.weapon]),int(p.magazine[p.weapon]),int(p.reserve[p.weapon])]
+	if health_bar != null:
+		health_bar.value = p.health
+		hunger_bar.value = p.hunger
+		thirst_bar.value = p.thirst
 
 func _process(delta: float) -> void:
+	if onboarding_timer > 0.0 and not paused:
+		onboarding_timer -= delta
+		if onboarding_timer <= 0.0:
+			if onboarding_index < onboarding_steps.size():
+				notify(onboarding_steps[onboarding_index])
+				onboarding_index += 1
+				onboarding_timer = 4.5
+			else:
+				onboarding_timer = 0.0
 	if message_time > 0.0:
 		message_time -= delta
 		if message_time <= 0.0 and message_label: message_label.text = ""
