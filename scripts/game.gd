@@ -132,7 +132,9 @@ func _create_world() -> void:
 	for x in range(-45, 46, 9):
 		_box(self, "Faded lane marking", Vector3(x,0.01,0), Vector3(3.0,0.025,0.12), _material(Color("#9b9682"),0.95), false)
 	for z in range(-44, 45, 8):
-		_box(self, "Faded double yellow line", Vector3(0,0.015,z), Vector3(0.075,0.025,2.8), _material(Color("#a18c48"),0.92), false)
+		for side in [-1.0,1.0]:
+			_box(self,"Faded double yellow line",Vector3(side*6.7,0.015,z),Vector3(0.075,0.025,2.8),_material(Color("#a18c48"),0.92),false)
+			_box(self,"Faded cross-street yellow line",Vector3(z,0.015,side*6.7),Vector3(2.8,0.025,0.075),_material(Color("#a18c48"),0.92),false)
 	for side in [-1.0, 1.0]:
 		_box(self,"Kerb",Vector3(0,0.12,side*7.75),Vector3(104,0.24,0.22),_material(Color("#77766e"),0.94))
 		_box(self,"Kerb",Vector3(side*7.75,0.12,0),Vector3(0.22,0.24,104),_material(Color("#77766e"),0.94))
