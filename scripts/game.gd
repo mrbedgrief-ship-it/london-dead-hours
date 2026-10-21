@@ -33,7 +33,7 @@ var onboarding_steps: Array[String] = [
 	"Food restores hunger, water restores thirst, medical kits restore health.",
 	"Follow the warm lights to find shelter and the trader."
 ]
-var trader_stock := {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4}
+var trader_stock := {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4, "scrap": 0}
 var item_data := {
 	"food": {"name":"Canned Food", "buy":8, "sell":4, "desc":"Restores hunger."},
 	"water": {"name":"Bottled Water", "buy":6, "sell":3, "desc":"Restores thirst."},
@@ -579,14 +579,14 @@ func toggle_inventory(force_close := false) -> void:
 	_button("CLOSE  [TAB / ESC]",Callable(self,"toggle_inventory"))
 
 func open_trader() -> void:
-	if paused or player == null: return
+	if player == null: return
 	player.aiming = false
 	paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var c := _panel("THE TRADER")
 	var cash := Label.new()
 	cash.name = "CashLabel"
-	cash.text = "Your cash: £" + str(player.money)
+	cash.text = "YOUR CASH: £" + str(player.money) + "    ·    SURVIVAL TRADE"
 	c.add_child(cash)
 	var note := Label.new()
 	note.text = "BUY stock or SELL valuables from your pack."
@@ -594,7 +594,7 @@ func open_trader() -> void:
 	for id in trader_stock.keys():
 		var row := HBoxContainer.new()
 		var label := Label.new()
-		label.text = str(item_data[id].name) + "  ×" + str(trader_stock[id]) + "   £" + str(item_data[id].buy)
+		label.text = "%s  ×%d   BUY £%d  /  SELL £%d" % [str(item_data[id].name),int(trader_stock[id]),int(item_data[id].buy),int(item_data[id].sell)]
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(label)
 		var buy := Button.new()
