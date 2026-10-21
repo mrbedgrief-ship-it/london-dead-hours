@@ -60,7 +60,7 @@ func _build_camera() -> void:
 	add_child(camera)
 	ray = RayCast3D.new()
 	ray.name = "AimRay"
-	ray.target_position = Vector3(0.0, 0.0, -45.0)
+	ray.target_position = Vector3(0.0, 0.0, -3.0)
 	ray.collide_with_areas = true
 	ray.collide_with_bodies = true
 	ray.enabled = true
