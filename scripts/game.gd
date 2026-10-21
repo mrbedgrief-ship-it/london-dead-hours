@@ -196,10 +196,10 @@ func _create_world() -> void:
 	# Brick buildings form a broken, navigable street grid.
 	for z in [-22.0, 22.0]:
 		for x in [-37.0,-18.0,4.0,27.0,44.0]:
-			_building(Vector3(x,0,z), Vector3(15.0,8.5,10.0), mat_brick if int(x) % 2 == 0 else mat_dark_brick)
+			_building(Vector3(x,0,z), Vector3(15.0,8.5,10.0), mat_brick if int(x) % 2 == 0 else mat_dark_brick, x == 27.0 and z == -22.0)
 	for x in [-22.0,22.0]:
 		for z in [-39.0,-18.0,3.0,26.0,43.0]:
-			_building(Vector3(x,0,z), Vector3(10.0,8.0,15.0), mat_brick)
+			_building(Vector3(x,0,z), Vector3(10.0,8.0,15.0), mat_brick, x == -22.0 and z == 22.0)
 	# A narrow alley with service walls and a lit doorway.
 	_box(self,"Alley wall",Vector3(-3,2.1,-31),Vector3(0.7,4.2,12),mat_dark_brick)
 	_box(self,"Alley wall",Vector3(3,2.1,-31),Vector3(0.7,4.2,12),mat_dark_brick)
@@ -243,11 +243,11 @@ func _create_world() -> void:
 	_make_loot("Hideout Supply Crate",Vector3(-39,0.55,0), "food",2)
 	_make_loot("Water Crate",Vector3(-36,0.55,1.8),"water",2)
 	_make_loot("First Aid Drawer",Vector3(-32,0.55,-1.6),"medkit",1)
-	_make_loot("Market Shelf",Vector3(28,0.65,-13.5),"food",2)
-	_make_loot("Market Fridge",Vector3(31,0.65,-13.5),"water",2)
-	_make_loot("Market Cash Drawer",Vector3(25,0.55,-13.5),"money",12)
-	_make_loot("Gun Shop Cabinet",Vector3(-20,0.55,13.5),"pistol_ammo",12)
-	_make_loot("Gun Shop Display",Vector3(-17,0.55,13.5),"shells",4)
+	_make_loot("Market Shelf",Vector3(22,0.55,-23.8),"food",2)
+	_make_loot("Market Fridge",Vector3(32,0.55,-23.8),"water",2)
+	_make_loot("Market Cash Drawer",Vector3(27,1.55,-19.6),"money",12)
+	_make_loot("Gun Shop Cabinet",Vector3(-24,0.55,23.8),"pistol_ammo",12)
+	_make_loot("Gun Shop Display",Vector3(-19,0.55,23.8),"shells",4)
 	_make_loot("Abandoned Car Boot",Vector3(13,0.55,-0.7),"scrap",1)
 	_make_loot("Apartment Cabinet",Vector3(41,0.55,18),"food",1)
 	_make_loot("Old Desk Drawer",Vector3(2,0.55,-40),"scrap",1)
@@ -272,9 +272,60 @@ func _create_world() -> void:
 	trader_lamp.omni_range = 8.0
 	add_child(trader_lamp)
 
-func _building(center: Vector3, size: Vector3, material: Material) -> void:
-	_box(self,"Brick building",center + Vector3(0,size.y/2.0,0),size,material)
+func _build_shop_shell(center: Vector3, size: Vector3, material: Material, face: float) -> void:
+	var wall_height := 4.2
+	var wall_y := wall_height * 0.5
+	var front_z := center.z + face * (size.z * 0.5 - 0.15)
+	var back_z := center.z - face * (size.z * 0.5 - 0.15)
+	var wall_depth := 0.3
+	_box(self,"Shop interior floor",Vector3(center.x,0.12,center.z),Vector3(size.x-0.3,0.24,size.z-0.3),mat_ground)
+	_box(self,"Shop rear wall",Vector3(center.x,wall_y,back_z),Vector3(size.x,wall_height,wall_depth),material)
+	for side in [-1.0,1.0]:
+		_box(self,"Shop side wall",Vector3(center.x+side*(size.x*0.5-wall_depth*0.5),wall_y,center.z),Vector3(wall_depth,wall_height,size.z),material)
+		_box(self,"Shop front pier",Vector3(center.x+side*6.85,wall_y,front_z),Vector3(1.3,wall_height,wall_depth),material)
+		_box(self,"Shop doorway pier",Vector3(center.x+side*1.22,wall_y,front_z),Vector3(0.42,wall_height,wall_depth),material)
+		_box(self,"Shop display glazing",Vector3(center.x+side*4.0,2.0,front_z),Vector3(4.3,2.45,0.07),mat_glass)
+		_box(self,"Shop window mullion",Vector3(center.x+side*4.0,2.0,front_z+face*0.055),Vector3(0.075,2.45,0.08),mat_metal,false)
+		_box(self,"Shop window sill",Vector3(center.x+side*4.0,0.76,front_z+face*0.08),Vector3(4.45,0.12,0.18),mat_metal,false)
+	_box(self,"Shop front lintel",Vector3(center.x,3.98,front_z),Vector3(size.x,0.44,wall_depth),material)
+	_box(self,"Shop doorway frame",Vector3(center.x,1.15,front_z+face*0.05),Vector3(1.8,2.3,0.06),mat_dark_brick,false)
+	var door_leaf := _box(self,"Partly open shop door",Vector3(center.x+face*0.48,1.08,front_z-face*0.08),Vector3(0.82,2.05,0.07),mat_wood,false)
+	door_leaf.rotation.y = face * 0.34
+	_box(self,"Shop door handle",Vector3(center.x+face*0.78,1.1,front_z-face*0.03),Vector3(0.04,0.12,0.04),mat_metal,false)
+	_box(self,"Shop upper storey",Vector3(center.x,(wall_height+size.y)*0.5,center.z),Vector3(size.x,size.y-wall_height,size.z),material)
+	var interior := Node3D.new()
+	interior.name = "Shop Furnishings"
+	interior.position = center
+	add_child(interior)
+	var shelf_mat := _material(Color("#5a4736"),0.95)
+	var shelf_metal := _material(Color("#414746"),0.75)
+	var inside_z := -face * 1.25
+	if center.x > 0.0:
+		for side in [-1.0,1.0]:
+			_box(interior,"Market aisle shelving",Vector3(side*5.35,1.05,inside_z),Vector3(0.95,2.1,4.1),shelf_mat)
+			for level in [0.55,1.1,1.65]:
+				_box(interior,"Market shelf board",Vector3(side*4.82,level,inside_z),Vector3(0.12,0.07,3.8),shelf_metal,false)
+			for product_z in [-2.5,-1.3,0.0]:
+				_box(interior,"Cans and packets",Vector3(side*4.75,1.42,product_z),Vector3(0.16,0.22,0.18),mat_wood,false)
+		_box(interior,"Market checkout counter",Vector3(0,0.68,face*2.5),Vector3(3.6,1.36,0.78),mat_wood)
+		_box(interior,"Counter display glass",Vector3(0,1.4,face*2.5),Vector3(2.6,0.18,0.55),mat_glass,false)
+		_box(interior,"Market drinks fridge",Vector3(5.3,1.1,face*2.1),Vector3(1.05,2.2,0.85),shelf_metal)
+		_box(interior,"Fridge door",Vector3(5.3,1.1,face*2.1+face*0.44),Vector3(0.88,1.95,0.05),mat_glass,false)
+	else:
+		for side in [-1.0,1.0]:
+			_box(interior,"Gun shop display rack",Vector3(side*3.8,1.1,inside_z),Vector3(1.0,2.2,3.6),shelf_metal)
+			for level in [0.65,1.25,1.85]:
+				_box(interior,"Gun shop rack rail",Vector3(side*3.22,level,inside_z),Vector3(0.12,0.06,3.3),mat_metal,false)
+		_box(interior,"Gun shop service counter",Vector3(0,0.68,face*2.55),Vector3(4.2,1.36,0.85),mat_wood)
+		_box(interior,"Gun shop locked display",Vector3(0,1.2,face*0.1),Vector3(1.6,1.5,2.0),shelf_metal)
+		_box(interior,"Locked display glass",Vector3(0,1.25,face*0.62),Vector3(1.45,1.15,0.05),mat_glass,false)
+
+func _building(center: Vector3, size: Vector3, material: Material, open_shop := false) -> void:
 	var face: float = 1.0 if center.z < 0.0 else -1.0
+	if open_shop:
+		_build_shop_shell(center,size,material,face)
+	else:
+		_box(self,"Brick building",center + Vector3(0,size.y/2.0,0),size,material)
 	var front_z: float = center.z + face * (size.z/2.0+0.035)
 	var frame_mat := _material(Color("#b0a28a"),0.86)
 	var sill_mat := _material(Color("#373633"),0.92)
@@ -285,6 +336,8 @@ func _building(center: Vector3, size: Vector3, material: Material) -> void:
 	var window_columns: Array[float] = [-size.x*0.32,0.0,size.x*0.32]
 	for row in range(window_rows.size()):
 		var wy: float = window_rows[row]
+		if open_shop and wy < 4.5:
+			continue
 		for col in range(3):
 			var wx: float = center.x + window_columns[col]
 			var boarded: bool = (int(abs(center.x))+row*3+col)%7 == 0
@@ -298,11 +351,12 @@ func _building(center: Vector3, size: Vector3, material: Material) -> void:
 			if boarded:
 				for board in range(3):
 					_box(self,"Boarded window plank",Vector3(wx,wy-0.38+board*0.38,front_z+face*0.13),Vector3(ww*0.95,0.09,0.06),mat_wood,false)
-	var door_x: float = center.x + (size.x*0.24 if int(abs(center.x))%2==0 else -size.x*0.24)
-	_box(self,"Recessed entrance",Vector3(door_x,1.15,front_z),Vector3(1.15,2.25,0.12),mat_dark_brick,false)
-	_box(self,"Blocked doorway",Vector3(door_x,1.15,front_z+face*0.075),Vector3(0.88,1.98,0.05),sill_mat,false)
-	_box(self,"Door panel",Vector3(door_x,1.15,front_z+face*0.11),Vector3(0.64,1.7,0.055),mat_wood,false)
-	_box(self,"Door handle",Vector3(door_x+0.22,1.15,front_z+face*0.16),Vector3(0.035,0.11,0.035),mat_metal,false)
+	if not open_shop:
+		var door_x: float = center.x + (size.x*0.24 if int(abs(center.x))%2==0 else -size.x*0.24)
+		_box(self,"Recessed entrance",Vector3(door_x,1.15,front_z),Vector3(1.15,2.25,0.12),mat_dark_brick,false)
+		_box(self,"Blocked doorway",Vector3(door_x,1.15,front_z+face*0.075),Vector3(0.88,1.98,0.05),sill_mat,false)
+		_box(self,"Door panel",Vector3(door_x,1.15,front_z+face*0.11),Vector3(0.64,1.7,0.055),mat_wood,false)
+		_box(self,"Door handle",Vector3(door_x+0.22,1.15,front_z+face*0.16),Vector3(0.035,0.11,0.035),mat_metal,false)
 	_box(self,"Ground-floor fascia",Vector3(center.x,3.25,front_z+face*0.14),Vector3(size.x*0.92,0.16,0.16),sill_mat,false)
 	_box(self,"Stone cornice",Vector3(center.x,size.y+0.18,center.z),Vector3(size.x+0.35,0.28,size.z+0.35),frame_mat,false)
 	_box(self,"Roof parapet",Vector3(center.x,size.y+0.48,center.z),Vector3(size.x+0.18,0.36,size.z+0.18),mat_dark_brick,false)
