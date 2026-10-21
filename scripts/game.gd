@@ -35,14 +35,14 @@ var onboarding_steps: Array[String] = [
 ]
 var trader_stock := {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4, "scrap": 0}
 var item_data := {
-	"food": {"name":"Canned Food", "buy":8, "sell":4, "desc":"Restores hunger."},
-	"water": {"name":"Bottled Water", "buy":6, "sell":3, "desc":"Restores thirst."},
-	"medkit": {"name":"Medical Kit", "buy":18, "sell":9, "desc":"Restores health."},
-	"pistol_ammo": {"name":"Pistol Rounds", "buy":12, "sell":5, "desc":"12 rounds."},
-	"shells": {"name":"Shotgun Shells", "buy":16, "sell":7, "desc":"8 shells."},
-	"rifle_ammo": {"name":"Rifle Rounds", "buy":20, "sell":8, "desc":"30 rounds."},
-	"scrap": {"name":"Antique Watch", "buy":0, "sell":22, "desc":"A valuable relic from the old world."},
-	"food_tin": {"name":"Canned Food", "buy":8, "sell":4, "desc":"Restores hunger."}
+	"food": {"name":"Canned Food", "buy":8, "sell":4, "desc":"Restores hunger.", "category":"FOOD"},
+	"water": {"name":"Bottled Water", "buy":6, "sell":3, "desc":"Restores thirst.", "category":"DRINK"},
+	"medkit": {"name":"Medical Kit", "buy":18, "sell":9, "desc":"Restores health.", "category":"MEDICAL"},
+	"pistol_ammo": {"name":"Pistol Rounds", "buy":12, "sell":5, "desc":"12 rounds.", "category":"AMMUNITION"},
+	"shells": {"name":"Shotgun Shells", "buy":16, "sell":7, "desc":"8 shells.", "category":"AMMUNITION"},
+	"rifle_ammo": {"name":"Rifle Rounds", "buy":20, "sell":8, "desc":"30 rounds.", "category":"AMMUNITION"},
+	"scrap": {"name":"Antique Watch", "buy":0, "sell":22, "desc":"A valuable relic from the old world.", "category":"VALUABLE"},
+	"food_tin": {"name":"Canned Food", "buy":8, "sell":4, "desc":"Restores hunger.", "category":"FOOD"}
 }
 
 func _ready() -> void:
