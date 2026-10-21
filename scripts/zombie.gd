@@ -243,7 +243,7 @@ func _spawn_hit_particles(hit_position: Vector3) -> void:
 func take_damage(amount: float, hit_position: Vector3 = Vector3.ZERO, is_headshot: bool = false) -> void:
 	if dead or not is_finite(amount) or amount <= 0.0:
 		return
-	hit_react_timer = 0.28
+	hit_react_timer = 0.38 if is_headshot else 0.28
 	hit_react_side = -1.0 if randf() < 0.5 else 1.0
 	attack_windup = 0.0
 	attack_animation_timer = 0.0
