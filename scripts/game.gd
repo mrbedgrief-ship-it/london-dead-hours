@@ -264,7 +264,7 @@ func _create_world() -> void:
 	_make_loot("Market Cash Drawer",Vector3(27,1.82,-19.6),"money",12)
 	_make_loot("Gun Shop Cabinet",Vector3(-24,0.4,23.8),"pistol_ammo",12)
 	_make_loot("Gun Shop Display",Vector3(-20.5,0.4,23.8),"shells",4)
-	_make_loot("Abandoned Car Boot",Vector3(13,0.4,-0.7),"scrap",1)
+	_make_loot("Abandoned Car Boot",Vector3(13,0.4,-4.8),"scrap",1)
 	_make_loot("Apartment Cabinet",Vector3(41,0.4,18),"food",1)
 	_make_loot("Old Desk Drawer",Vector3(2,0.4,-40),"scrap",1)
 	_make_trader(Vector3(40,0,0))
