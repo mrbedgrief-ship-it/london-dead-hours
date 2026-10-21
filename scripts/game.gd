@@ -8,7 +8,7 @@ var mat_glass: StandardMaterial3D
 var mat_gun: StandardMaterial3D
 var mat_metal: StandardMaterial3D
 var mat_wood: StandardMaterial3D
-var player: CharacterBody3D
+var player
 var props: Node3D
 var ui_layer: CanvasLayer
 var root_ui: Control
