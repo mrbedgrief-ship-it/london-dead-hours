@@ -123,8 +123,13 @@ func _input(event: InputEvent) -> void:
 				aiming = true
 			elif not event.pressed:
 				aiming = false
-		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed and _gameplay_active():
-			_fire()
+		elif event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			if is_instance_valid(game) and not game.paused and not inv_open and not dead and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+				get_viewport().set_input_as_handled()
+				return
+			if _gameplay_active():
+				_fire()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
