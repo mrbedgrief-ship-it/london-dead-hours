@@ -214,10 +214,12 @@ func _building(center: Vector3, size: Vector3, material: Material) -> void:
 	var glass_dark := _material(Color("#172326"),0.18)
 	var ww: float = 1.22 if size.x > 11.0 else 1.08
 	var wh := 1.42
+	var window_rows: Array[float] = [2.35,4.65,6.65]
+	var window_columns: Array[float] = [-size.x*0.32,0.0,size.x*0.32]
 	for row in range(3):
-		var wy: float = [2.35,4.65,6.65][row]
+		var wy: float = window_rows[row]
 		for col in range(3):
-			var wx: float = center.x + [-size.x*0.32,0.0,size.x*0.32][col]
+			var wx: float = center.x + window_columns[col]
 			var boarded: bool = (int(abs(center.x))+row*3+col)%7 == 0
 			_box(self,"Window recess",Vector3(wx,wy,front_z),Vector3(ww+0.22,wh+0.24,0.10),mat_dark_brick,false)
 			_box(self,"Window glass",Vector3(wx,wy,front_z+face*0.055),Vector3(ww,wh,0.035),glass_dark,false)
@@ -496,7 +498,14 @@ func show_controls() -> void:
 	controls.text = "W A S D  —  Move\nMouse  —  Look around\nShift  —  Sprint\nE  —  Search / interact / trade\nLeft mouse  —  Fire\nRight mouse  —  Aim\nR  —  Reload\n1 / 2 / 3  —  Pistol / shotgun / rifle\nTab  —  Inventory\nEsc  —  Pause / close a panel"
 	controls.add_theme_font_size_override("font_size",16)
 	c.add_child(controls)
-	_button("BACK TO PAUSE MENU",Callable(self,"toggle_pause"))
+	_button("RETURN TO PAUSE MENU",Callable(self,"return_to_pause_menu"))
+
+func return_to_pause_menu() -> void:
+	if panel != null and is_instance_valid(panel):
+		panel.queue_free()
+	panel = null
+	paused = false
+	toggle_pause()
 
 func toggle_inventory(force_close := false) -> void:
 	if player == null or paused and not player.inv_open: return
