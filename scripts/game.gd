@@ -690,7 +690,7 @@ func start_new_game() -> void:
 	for existing_zombie in get_tree().get_nodes_in_group("zombies"):
 		if is_instance_valid(existing_zombie):
 			existing_zombie.queue_free()
-	trader_stock = {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4, "scrap": 0}
+	trader_stock = {"food": 8, "food_tin": 4, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4, "scrap": 0}
 	for container in get_tree().get_nodes_in_group("searchable_containers"):
 		container.searched = false
 	zombie_respawn_timer = 0.0
