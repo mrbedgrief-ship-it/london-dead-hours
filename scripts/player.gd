@@ -458,5 +458,9 @@ func use_item(item_id: String) -> void:
 		game.notify("That item cannot be used.")
 		return
 	inventory[item_id] = maxi(0, int(inventory.get(item_id, 0)) - 1)
-	game.notify("Used " + str(game.item_data.get(item_id, {}).get("name", item_id.replace("_", " "))) + ".")
+	var display_name: String = item_id.replace("_", " ")
+	var item_info: Variant = game.item_data.get(item_id, {})
+	if item_info is Dictionary:
+		display_name = str(item_info.get("name", display_name))
+	game.notify("Used " + display_name + ".")
 	game.toggle_inventory(true)
