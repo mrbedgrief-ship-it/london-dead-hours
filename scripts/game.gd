@@ -331,6 +331,7 @@ func _make_loot(title: String, pos: Vector3, item: String, count: int) -> void:
 		for x in [-0.3,0.0,0.3]:
 			_box(box,"Abandoned product",Vector3(x,0.12,0.17),Vector3(0.16,0.19,0.16),mat_wood if x != 0.0 else mat_glass,false)
 	box.set_script(load("res://scripts/interactable.gd"))
+	box.add_to_group("searchable_containers")
 	box.title = title
 	box.item_id = item
 	box.quantity = count
