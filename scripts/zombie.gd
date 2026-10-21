@@ -210,7 +210,7 @@ func _animate_body(delta: float) -> void:
 		torso.rotation.x = -0.10 if runner and moving else 0.035
 
 func _spawn_hit_particles(hit_position: Vector3) -> void:
-	var particles := CPUParticles3D.new()
+	var particles := GPUParticles3D.new()
 	particles.name = "HitImpact"
 	particles.amount = 9 if not runner else 12
 	particles.lifetime = 0.22
