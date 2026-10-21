@@ -49,6 +49,9 @@ func _ready() -> void:
 	right_leg = _leg_pivot(visual_root,"RightLeg",Vector3(0.16,0.78,0),trousers,dirt)
 	if runner:
 		_add_box(visual_root,"Runner torn shoulder",Vector3(-0.29,1.40,0),Vector3(0.18,0.22,0.21),stained)
+		_add_box(visual_root,"Runner hanging sleeve",Vector3(0.34,1.18,0.015),Vector3(0.12,0.30,0.22),dirt)
+		_add_box(visual_root,"Runner neck wrap",Vector3(0,1.56,0.015),Vector3(0.25,0.10,0.21),stained)
+		_add_box(visual_root,"Runner torn trouser patch",Vector3(-0.16,0.58,0.13),Vector3(0.13,0.20,0.035),stained)
 		visual_root.scale = Vector3(0.92,1.02,0.92)
 
 func _material(color: Color) -> StandardMaterial3D:
@@ -156,3 +159,10 @@ func take_damage(amount: float) -> void:
 		if visual_root != null:
 			visual_root.rotation.z = PI * 0.5
 			visual_root.position.y = 0.32
+		var corpse_timer := Timer.new()
+		corpse_timer.name = "CorpseCleanupTimer"
+		corpse_timer.one_shot = true
+		corpse_timer.wait_time = 24.0
+		corpse_timer.timeout.connect(queue_free)
+		add_child(corpse_timer)
+		corpse_timer.start()
