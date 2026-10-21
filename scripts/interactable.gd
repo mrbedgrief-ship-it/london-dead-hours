@@ -14,7 +14,7 @@ func get_prompt() -> String:
 	if searched: return title + " — Empty"
 	return "E — Search " + title
 
-func interact(player: CharacterBody3D) -> void:
+func interact(player) -> void:
 	var game = get_tree().current_scene
 	if kind == "trader":
 		game.call("open_trader")
