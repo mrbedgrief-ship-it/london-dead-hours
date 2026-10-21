@@ -26,8 +26,10 @@ var menu_open := true
 var message_time := 0.0
 var onboarding_index := 0
 var onboarding_timer := 0.0
-const ZOMBIE_TARGET_ALIVE := 6
-const ZOMBIE_MAX_ALIVE := 8
+@export_range(1, 12, 1) var zombie_target_alive := 6
+@export_range(1, 16, 1) var zombie_max_alive := 8
+@export_range(5.0, 60.0, 1.0) var zombie_respawn_min_seconds := 16.0
+@export_range(5.0, 90.0, 1.0) var zombie_respawn_max_seconds := 24.0
 var zombie_respawn_timer := 0.0
 var zombie_spawn_points: Array[Vector3] = [
 	Vector3(-14,0,0), Vector3(14,0,0), Vector3(0,0,-14), Vector3(0,0,14),
@@ -492,11 +494,11 @@ func _update_zombie_spawning(delta: float) -> void:
 	for node in get_tree().get_nodes_in_group("zombies"):
 		if is_instance_valid(node) and not bool(node.get("dead")):
 			living += 1
-	if living >= ZOMBIE_TARGET_ALIVE or living >= ZOMBIE_MAX_ALIVE:
+	if living >= zombie_target_alive or living >= zombie_max_alive:
 		zombie_respawn_timer = 0.0
 		return
 	if zombie_respawn_timer <= 0.0:
-		zombie_respawn_timer = spawn_rng.randf_range(16.0, 24.0)
+		zombie_respawn_timer = spawn_rng.randf_range(zombie_respawn_min_seconds, maxf(zombie_respawn_min_seconds, zombie_respawn_max_seconds))
 		return
 	zombie_respawn_timer -= delta
 	if zombie_respawn_timer > 0.0:
@@ -513,7 +515,7 @@ func _try_spawn_zombie() -> bool:
 	for node in get_tree().get_nodes_in_group("zombies"):
 		if is_instance_valid(node) and not bool(node.get("dead")):
 			living += 1
-	if living >= ZOMBIE_MAX_ALIVE:
+	if living >= zombie_max_alive:
 		return false
 	var candidates := zombie_spawn_points.duplicate()
 	for i in range(candidates.size()):
