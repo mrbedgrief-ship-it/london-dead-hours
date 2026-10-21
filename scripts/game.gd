@@ -238,9 +238,9 @@ func _building(center: Vector3, size: Vector3, material: Material) -> void:
 	var glass_dark := _material(Color("#172326"),0.18)
 	var ww: float = 1.22 if size.x > 11.0 else 1.08
 	var wh := 1.42
-	var window_rows: Array[float] = [2.35,4.65,6.65]
+	var window_rows: Array[float] = [2.35,5.65]
 	var window_columns: Array[float] = [-size.x*0.32,0.0,size.x*0.32]
-	for row in range(3):
+	for row in range(window_rows.size()):
 		var wy: float = window_rows[row]
 		for col in range(3):
 			var wx: float = center.x + window_columns[col]
