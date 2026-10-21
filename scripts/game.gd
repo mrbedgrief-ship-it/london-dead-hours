@@ -196,7 +196,7 @@ func _create_world() -> void:
 	# Brick buildings form a broken, navigable street grid.
 	for z in [-22.0, 22.0]:
 		for x in [-37.0,-18.0,4.0,27.0,44.0]:
-			_building(Vector3(x,0,z), Vector3(15.0,8.5,10.0), mat_brick if int(x) % 2 == 0 else mat_dark_brick, x == 27.0 and z == -22.0)
+			_building(Vector3(x,0,z), Vector3(15.0,8.5,10.0), mat_brick if int(x) % 2 == 0 else mat_dark_brick, (x == 27.0 and z == -22.0) or (x == 44.0 and z == 22.0))
 	for x in [-22.0,22.0]:
 		for z in [-39.0,-18.0,3.0,26.0,43.0]:
 			_building(Vector3(x,0,z), Vector3(10.0,8.0,15.0), mat_brick, x == -22.0 and z == 22.0)
@@ -300,7 +300,7 @@ func _build_shop_shell(center: Vector3, size: Vector3, material: Material, face:
 	var shelf_mat := _material(Color("#5a4736"),0.95)
 	var shelf_metal := _material(Color("#414746"),0.75)
 	var inside_z := -face * 1.25
-	if center.x > 0.0:
+	if center.x > 0.0 and center.x < 35.0:
 		for side in [-1.0,1.0]:
 			_box(interior,"Market aisle shelving",Vector3(side*5.35,1.05,inside_z),Vector3(0.95,2.1,4.1),shelf_mat)
 			for level in [0.55,1.1,1.65]:
@@ -319,6 +319,25 @@ func _build_shop_shell(center: Vector3, size: Vector3, material: Material, face:
 		_box(interior,"Gun shop service counter",Vector3(0,0.68,face*2.55),Vector3(4.2,1.36,0.85),mat_wood)
 		_box(interior,"Gun shop locked display",Vector3(0,1.2,face*0.1),Vector3(1.6,1.5,2.0),shelf_metal)
 		_box(interior,"Locked display glass",Vector3(0,1.25,face*0.62),Vector3(1.45,1.15,0.05),mat_glass,false)
+	elif center.x < 0.0:
+		for side in [-1.0,1.0]:
+			_box(interior,"Gun shop display rack",Vector3(side*3.8,1.1,inside_z),Vector3(1.0,2.2,3.6),shelf_metal)
+			for level in [0.65,1.25,1.85]:
+				_box(interior,"Gun shop rack rail",Vector3(side*3.22,level,inside_z),Vector3(0.12,0.06,3.3),mat_metal,false)
+		_box(interior,"Gun shop service counter",Vector3(0,0.68,face*2.55),Vector3(4.2,1.36,0.85),mat_wood)
+		_box(interior,"Gun shop locked display",Vector3(0,1.2,face*0.1),Vector3(1.6,1.5,2.0),shelf_metal)
+		_box(interior,"Locked display glass",Vector3(0,1.25,face*0.62),Vector3(1.45,1.15,0.05),mat_glass,false)
+	else:
+		_box(interior,"Residential bed frame",Vector3(3.0,0.34,-face*1.5),Vector3(2.0,0.45,3.0),shelf_mat)
+		_box(interior,"Worn mattress",Vector3(3.0,0.62,-face*1.5),Vector3(1.85,0.18,2.8),_material(Color("#77756b"),0.98),false)
+		_box(interior,"Bed pillow",Vector3(3.0,0.78,-face*2.55),Vector3(0.8,0.12,0.48),_material(Color("#a09a88"),0.98),false)
+		_box(interior,"Wardrobe",Vector3(-5.1,1.1,-face*1.5),Vector3(1.25,2.2,0.85),shelf_mat)
+		_box(interior,"Kitchen counter",Vector3(-4.5,0.65,face*1.8),Vector3(1.4,1.3,3.2),shelf_mat)
+		_box(interior,"Kitchen worktop",Vector3(-4.5,1.34,face*1.8),Vector3(1.5,0.10,3.3),shelf_metal,false)
+		_box(interior,"Small dining table",Vector3(0,0.75,-face*0.1),Vector3(1.6,0.12,1.3),shelf_mat)
+		for chair_side in [-1.0,1.0]:
+			_box(interior,"Dining chair seat",Vector3(chair_side*1.15,0.48,-face*0.1),Vector3(0.48,0.12,0.48),shelf_mat)
+			_box(interior,"Dining chair back",Vector3(chair_side*1.15,0.82,-face*0.1-face*0.18),Vector3(0.48,0.55,0.10),shelf_mat)
 
 func _building(center: Vector3, size: Vector3, material: Material, open_shop := false) -> void:
 	var face: float = 1.0 if center.z < 0.0 else -1.0
