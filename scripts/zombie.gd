@@ -63,9 +63,19 @@ func _material(color: Color) -> StandardMaterial3D:
 func _add_box(parent: Node3D, part_name: String, pos: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
 	var part := MeshInstance3D.new()
 	part.name = part_name
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	part.mesh = mesh
+	if part_name in ["Torso","Ragged outer layer","Neck","Head","Jaw","Upper sleeve","Forearm","Trouser leg","Shin"]:
+		var radius := minf(size.x,size.z) * 0.5
+		var rounded := CapsuleMesh.new()
+		rounded.radius = radius
+		rounded.height = maxf(size.y,radius*2.0)
+		rounded.radial_segments = 12
+		rounded.rings = 4
+		part.mesh = rounded
+		part.scale = Vector3(size.x/(radius*2.0),size.y/rounded.height,size.z/(radius*2.0))
+	else:
+		var mesh := BoxMesh.new()
+		mesh.size = size
+		part.mesh = mesh
 	part.position = pos
 	part.material_override = material
 	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
