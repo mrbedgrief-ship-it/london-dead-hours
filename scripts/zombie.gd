@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 @export var runner := false
+@export_range(5.0, 90.0, 1.0) var corpse_lifetime := 24.0
 var health := 65.0
 var speed := 1.55
 var attack_timer := 0.0
@@ -172,7 +173,7 @@ func take_damage(amount: float) -> void:
 		var corpse_timer := Timer.new()
 		corpse_timer.name = "CorpseCleanupTimer"
 		corpse_timer.one_shot = true
-		corpse_timer.wait_time = 24.0
+		corpse_timer.wait_time = corpse_lifetime
 		corpse_timer.timeout.connect(queue_free)
 		add_child(corpse_timer)
 		corpse_timer.start()
