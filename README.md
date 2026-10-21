@@ -29,9 +29,10 @@ A compact, atmospheric first-person survival-horror game set in a fictionalized 
 
 ## Current implementation
 - Procedural London-inspired street environment and buildings.
-- First-person movement, collision, camera look, basic weapon view.
-- Three hitscan weapon modes with separate magazines and reserve ammunition.
-- Basic zombies that pursue and attack the player.
+- First-person movement and clamped mouse-look; mouse capture is restored on resume and recaptured with a gameplay click if needed.
+- Distinct visible pistol, shotgun and rifle models, aim-down-sights FOV, centered crosshair, hitscan shooting, per-weapon magazines/reserves, and reload timers.
+- Three weapons with separate damage, range, fire rate, magazine capacity, reserve ammunition, reload time, and shotgun pellet spread.
+- Zombies with health and one-shot-at-a-time hitscan damage; they stop pursuing and attacking while paused and stop permanently on death.
 - Searchable loot containers, food/water/medical supplies, survival meters.
 - Trader UI for purchasing and selling.
 - Inventory, pause, game-over and save/load interface.
@@ -40,7 +41,7 @@ A compact, atmospheric first-person survival-horror game set in a fictionalized 
 This is an early playable foundation. The environment and props are procedurally built rather than high-resolution authored models. Interiors are compact modular spaces. Zombie navigation is direct pursuit rather than full navigation-mesh pathfinding. Audio, full animation, comprehensive world-state persistence and Windows export presets may not be present yet. Source files have not been launched in a local Godot editor in the repository-writing environment; run the first local test below before treating the project as verified.
 
 ## Save data
-The game stores its save in Godot's user data directory for this project (when save/load is available from the UI).
+The game stores `user://dead_hours_save.json` in Godot's user-data directory. Save data includes version, money, health, hunger, thirst, inventory quantities (`food`, `water`, `medkit`, `scrap`), selected weapon, each weapon's magazine and reserve ammunition, and player position. Invalid/missing values are validated or defaulted on load; a missing save does not start a false load.
 
 ## Export a Windows build
 1. Open the project in Godot.
