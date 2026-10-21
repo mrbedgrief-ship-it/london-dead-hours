@@ -316,10 +316,10 @@ func _make_trader(pos: Vector3) -> void:
 	body.name = "Trader"
 	body.position = pos
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(1.0,1.8,0.75)
+	shape.size = Vector3(1.0,2.1,0.75)
 	var col := CollisionShape3D.new()
 	col.shape = shape
-	col.position.y = 0.9
+	col.position.y = 1.05
 	body.add_child(col)
 	var coat := _material(Color("#343d38"),0.96)
 	var trousers := _material(Color("#292d2b"),0.96)
