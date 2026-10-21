@@ -516,6 +516,7 @@ func save_game() -> void:
 		notify("Save failed: could not open the save file (error %d)." % FileAccess.get_open_error())
 		return
 	file.store_string(json_text)
+	file.flush()
 	var write_error := file.get_error()
 	file.close()
 	if write_error != OK:
