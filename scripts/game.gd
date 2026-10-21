@@ -497,7 +497,7 @@ func save_game() -> void:
 	var saved_weapon := str(player.weapon)
 	if not ["Pistol", "Shotgun", "Rifle"].has(saved_weapon):
 		saved_weapon = "Pistol"
-	var pos := player.global_position
+	var pos: Vector3 = player.global_position
 	var data := {
 		"version": 1,
 		"money": clampi(int(player.money), 0, 1000000000),
