@@ -19,6 +19,7 @@ var hunger_bar: ProgressBar
 var thirst_bar: ProgressBar
 var prompt_label: Label
 var message_label: Label
+var survival_warning_label: Label
 var panel: PanelContainer
 var panel_content: VBoxContainer
 var paused := false
@@ -586,6 +587,15 @@ func _create_ui() -> void:
 	message_label.add_theme_font_size_override("font_size",18)
 	message_label.add_theme_color_override("font_color",Color("#e4c18c"))
 	root_ui.add_child(message_label)
+	survival_warning_label = Label.new()
+	survival_warning_label.name = "SurvivalWarning"
+	survival_warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	survival_warning_label.position = Vector2(-260, 118)
+	survival_warning_label.size = Vector2(520, 30)
+	survival_warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	survival_warning_label.add_theme_font_size_override("font_size", 17)
+	survival_warning_label.add_theme_color_override("font_color", Color("#d96c58"))
+	root_ui.add_child(survival_warning_label)
 	crosshair = Label.new()
 	crosshair.name = "Crosshair"
 	crosshair.text = "+"
@@ -784,7 +794,7 @@ func toggle_inventory(force_close := false) -> void:
 				var use := Button.new()
 				use.text = "USE"
 				use.custom_minimum_size = Vector2(76,42)
-				use.pressed.connect(Callable(player,"use_item").bind("food" if id == "food_tin" else id))
+				use.pressed.connect(Callable(player,"use_item").bind(id))
 				row.add_child(use)
 			c.add_child(row)
 	if item_count == 0:
@@ -865,6 +875,24 @@ func notify(value: String) -> void:
 func update_hud(p: CharacterBody3D) -> void:
 	if hud == null: return
 	hud.text = "LONDON  /  DEAD HOURS\nCASH  £%d\n%s   %d / %d  |  RESERVE %d" % [p.money,p.weapon,int(p.ammo[p.weapon]),int(p.magazine[p.weapon]),int(p.reserve[p.weapon])]
+	if survival_warning_label != null:
+		var warning: String = ""
+		if p.health <= 25.0:
+			warning = "CRITICAL HEALTH — FIND MEDICAL SUPPLIES"
+		elif p.thirst <= 15.0:
+			warning = "CRITICAL DEHYDRATION — FIND WATER"
+		elif p.hunger <= 15.0:
+			warning = "CRITICAL STARVATION — FIND FOOD"
+		elif p.thirst <= 30.0:
+			warning = "LOW WATER — THIRST IS RISING"
+		elif p.hunger <= 30.0:
+			warning = "LOW FOOD — HUNGER IS RISING"
+		survival_warning_label.text = warning
+		survival_warning_label.visible = warning != "" and not paused and not menu_open
+		if p.health <= 25.0:
+			survival_warning_label.add_theme_color_override("font_color", Color("#e35c4f"))
+		else:
+			survival_warning_label.add_theme_color_override("font_color", Color("#d9a45b"))
 	if health_bar != null:
 		health_bar.value = p.health
 		hunger_bar.value = p.hunger
@@ -907,7 +935,7 @@ func save_game() -> void:
 		notify("Save failed: there is no active expedition.")
 		return
 	var safe_inventory: Dictionary = {}
-	for id in ["food", "water", "medkit", "scrap"]:
+	for id in ["food", "food_tin", "water", "medkit", "scrap"]:
 		safe_inventory[id] = clampi(int(player.inventory.get(id, 0)), 0, 9999)
 	var safe_ammo: Dictionary = {}
 	var safe_reserve: Dictionary = {}
@@ -976,7 +1004,7 @@ func load_game() -> void:
 
 	var saved_inventory = parsed.get("inventory", {})
 	if saved_inventory is Dictionary:
-		for id in ["food", "water", "medkit", "scrap"]:
+		for id in ["food", "food_tin", "water", "medkit", "scrap"]:
 			if saved_inventory.has(id):
 				player.inventory[id] = int(_bounded_number(saved_inventory[id], int(player.inventory.get(id, 0)), 0.0, 9999.0))
 
