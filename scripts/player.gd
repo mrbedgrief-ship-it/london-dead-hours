@@ -21,7 +21,7 @@ var dead := false
 var camera: Camera3D
 var ray: RayCast3D
 var gun: MeshInstance3D
-var game: Node3D
+var game
 
 func _ready() -> void:
 	game = get_parent()
