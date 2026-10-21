@@ -78,6 +78,9 @@ func _build_weapon_models() -> void:
 	_add_weapon_box(pistol, Vector3(0.15, 0.12, 0.30), Vector3(0.29, -0.22, -0.40), game.mat_gun)
 	_add_weapon_box(pistol, Vector3(0.10, 0.18, 0.13), Vector3(0.29, -0.34, -0.34), game.mat_metal)
 	_add_weapon_box(pistol, Vector3(0.055, 0.045, 0.11), Vector3(0.29, -0.15, -0.56), game.mat_metal)
+	_add_weapon_box(pistol, Vector3(0.035, 0.035, 0.18), Vector3(0.29, -0.19, -0.62), game.mat_metal)
+	_add_weapon_box(pistol, Vector3(0.06, 0.025, 0.045), Vector3(0.29, -0.13, -0.45), game.mat_metal)
+	_add_weapon_box(pistol, Vector3(0.13, 0.035, 0.13), Vector3(0.29, -0.37, -0.32), game.mat_gun)
 	weapon_root.add_child(pistol)
 	weapon_models["Pistol"] = pistol
 
@@ -87,6 +90,9 @@ func _build_weapon_models() -> void:
 	_add_weapon_box(shotgun, Vector3(0.17, 0.13, 0.30), Vector3(0.28, -0.23, -0.39), game.mat_gun)
 	_add_weapon_box(shotgun, Vector3(0.12, 0.09, 0.22), Vector3(0.28, -0.30, -0.61), game.mat_wood)
 	_add_weapon_box(shotgun, Vector3(0.12, 0.13, 0.24), Vector3(0.28, -0.25, -0.18), game.mat_wood)
+	_add_weapon_box(shotgun, Vector3(0.09, 0.055, 0.42), Vector3(0.28, -0.25, -0.83), game.mat_metal)
+	_add_weapon_box(shotgun, Vector3(0.055, 0.035, 0.12), Vector3(0.28, -0.13, -0.57), game.mat_gun)
+	_add_weapon_box(shotgun, Vector3(0.10, 0.10, 0.16), Vector3(0.28, -0.35, -0.40), game.mat_gun)
 	weapon_root.add_child(shotgun)
 	weapon_models["Shotgun"] = shotgun
 
@@ -97,6 +103,10 @@ func _build_weapon_models() -> void:
 	_add_weapon_box(rifle, Vector3(0.12, 0.14, 0.27), Vector3(0.28, -0.25, -0.13), game.mat_wood)
 	_add_weapon_box(rifle, Vector3(0.11, 0.075, 0.21), Vector3(0.28, -0.30, -0.57), game.mat_gun)
 	_add_weapon_box(rifle, Vector3(0.045, 0.06, 0.12), Vector3(0.28, -0.13, -0.39), game.mat_metal)
+	_add_weapon_box(rifle, Vector3(0.075, 0.08, 0.23), Vector3(0.28, -0.23, -0.92), game.mat_metal)
+	_add_weapon_box(rifle, Vector3(0.055, 0.12, 0.10), Vector3(0.28, -0.10, -0.45), game.mat_gun)
+	_add_weapon_box(rifle, Vector3(0.11, 0.18, 0.15), Vector3(0.28, -0.35, -0.50), game.mat_gun)
+	_add_weapon_box(rifle, Vector3(0.08, 0.05, 0.28), Vector3(0.28, -0.22, -0.03), game.mat_wood)
 	weapon_root.add_child(rifle)
 	weapon_models["Rifle"] = rifle
 	_refresh_weapon_model()
