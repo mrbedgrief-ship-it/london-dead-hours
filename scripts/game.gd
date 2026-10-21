@@ -135,6 +135,19 @@ func _capsule(parent: Node3D, part_name: String, pos: Vector3, size: Vector3, ma
 	parent.add_child(part)
 	return part
 
+func _add_world_sign(sign_text: String, pos: Vector3, face_rotation: float, ink: Color) -> void:
+	var sign_label := Label3D.new()
+	sign_label.name = sign_text.replace(" ","") + "Lettering"
+	sign_label.text = sign_text
+	sign_label.position = pos
+	sign_label.rotation.y = face_rotation
+	sign_label.font_size = 48
+	sign_label.pixel_size = 0.008
+	sign_label.modulate = ink
+	sign_label.outline_size = 5
+	sign_label.outline_modulate = Color("#211e1b")
+	add_child(sign_label)
+
 func _create_world() -> void:
 	var env_node := WorldEnvironment.new()
 	var env := Environment.new()
@@ -237,6 +250,9 @@ func _create_world() -> void:
 	_box(self,"NIGHT OWL MARKET sign",Vector3(28,4.3,-16.7),Vector3(7.5,0.85,0.2),_material(Color("#6b4935"),0.9),false)
 	_box(self,"IRON & ASH GUNS sign",Vector3(-20,4.2,16.7),Vector3(7.5,0.85,0.2),_material(Color("#3b3835"),0.9),false)
 	_box(self,"THE LAST PINT sign",Vector3(3,4.2,16.7),Vector3(6.5,0.8,0.2),_material(Color("#5b382f"),0.9),false)
+	_add_world_sign("NIGHT OWL MARKET",Vector3(28,4.3,-16.55),0.0,Color("#d7c3a2"))
+	_add_world_sign("IRON & ASH GUNS",Vector3(-20,4.2,16.55),PI,Color("#c7b9a0"))
+	_add_world_sign("THE LAST PINT",Vector3(3,4.2,16.55),PI,Color("#d4b68d"))
 	props = Node3D.new()
 	props.name = "Interactables"
 	add_child(props)
