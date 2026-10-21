@@ -34,6 +34,15 @@ var ray: RayCast3D
 var weapon_root: Node3D
 var weapon_models: Dictionary = {}
 var game
+var movement_clock: float = 0.0
+var viewmodel_sway: Vector2 = Vector2.ZERO
+var weapon_kick: float = 0.0
+var recoil_return: float = 0.0
+var reload_visual_time: float = 0.0
+var muzzle_flash_time: float = 0.0
+var muzzle_flash: MeshInstance3D
+var damage_flash_time: float = 0.0
+var damage_overlay: ColorRect
 
 func _ready() -> void:
 	game = get_parent()
@@ -72,6 +81,7 @@ func _build_weapon_models() -> void:
 	weapon_root.name = "FirstPersonWeapon"
 	weapon_root.position = Vector3.ZERO
 	camera.add_child(weapon_root)
+	_build_viewmodel_arms()
 
 	var pistol := Node3D.new()
 	pistol.name = "PistolModel"
@@ -109,7 +119,51 @@ func _build_weapon_models() -> void:
 	_add_weapon_box(rifle, Vector3(0.08, 0.05, 0.28), Vector3(0.28, -0.22, -0.03), game.mat_wood)
 	weapon_root.add_child(rifle)
 	weapon_models["Rifle"] = rifle
+	# A small emissive flash is a real scene object, toggled only during firing.
+	var flash_material := StandardMaterial3D.new()
+	flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	flash_material.albedo_color = Color("#ffcc78")
+	flash_material.emission_enabled = true
+	flash_material.emission = Color("#ff8b32")
+	flash_material.emission_energy_multiplier = 3.0
+	muzzle_flash = MeshInstance3D.new()
+	muzzle_flash.name = "MuzzleFlash"
+	var flash_mesh := SphereMesh.new()
+	flash_mesh.radius = 0.055
+	flash_mesh.height = 0.11
+	muzzle_flash.mesh = flash_mesh
+	muzzle_flash.material_override = flash_material
+	muzzle_flash.position = Vector3(0.28, -0.18, -0.98)
+	muzzle_flash.visible = false
+	weapon_root.add_child(muzzle_flash)
 	_refresh_weapon_model()
+
+func _build_viewmodel_arms() -> void:
+	var sleeve := StandardMaterial3D.new()
+	sleeve.albedo_color = Color("#303936")
+	sleeve.roughness = 0.94
+	var glove := StandardMaterial3D.new()
+	glove.albedo_color = Color("#282b29")
+	glove.roughness = 0.98
+	_add_viewmodel_capsule("LeftSleeve", Vector3(-0.19, -0.39, -0.31), 0.085, 0.43, sleeve, -0.58)
+	_add_viewmodel_capsule("RightSleeve", Vector3(0.24, -0.36, -0.31), 0.085, 0.40, sleeve, 0.52)
+	_add_viewmodel_capsule("LeftGlove", Vector3(-0.045, -0.30, -0.58), 0.065, 0.16, glove, -0.15)
+	_add_viewmodel_capsule("RightGlove", Vector3(0.23, -0.28, -0.56), 0.065, 0.16, glove, 0.12)
+
+func _add_viewmodel_capsule(part_name: String, pos: Vector3, radius: float, height: float, material: Material, roll: float) -> void:
+	var part := MeshInstance3D.new()
+	part.name = part_name
+	var mesh := CapsuleMesh.new()
+	mesh.radius = radius
+	mesh.height = height
+	mesh.radial_segments = 10
+	mesh.rings = 4
+	part.mesh = mesh
+	part.position = pos
+	part.rotation.z = roll
+	part.material_override = material
+	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	weapon_root.add_child(part)
 
 func _add_weapon_box(parent: Node3D, size: Vector3, pos: Vector3, material: Material) -> void:
 	var mesh_instance := MeshInstance3D.new()
@@ -126,6 +180,8 @@ func _input(event: InputEvent) -> void:
 		if _gameplay_active():
 			rotate_y(-event.relative.x * MOUSE_SENSITIVITY)
 			camera.rotate_x(-event.relative.y * MOUSE_SENSITIVITY)
+			viewmodel_sway.x = clampf(viewmodel_sway.x - event.relative.x * 0.000035, -0.035, 0.035)
+			viewmodel_sway.y = clampf(viewmodel_sway.y + event.relative.y * 0.000035, -0.025, 0.025)
 			camera.rotation.x = clampf(camera.rotation.x, deg_to_rad(-82.0), deg_to_rad(82.0))
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
@@ -173,10 +229,38 @@ func _gameplay_active() -> bool:
 func _process(delta: float) -> void:
 	if not is_instance_valid(camera):
 		return
-	var target_fov := AIM_FOV if aiming and _gameplay_active() else NORMAL_FOV
+	var target_fov: float = AIM_FOV if aiming and _gameplay_active() else NORMAL_FOV
 	camera.fov = lerpf(camera.fov, target_fov, minf(1.0, delta * 12.0))
+	movement_clock += delta * (10.0 if velocity.length() > 3.0 else 6.0)
+	weapon_kick = move_toward(weapon_kick, 0.0, delta * 1.8)
+	if recoil_return > 0.0:
+		var recover: float = minf(recoil_return, delta * 1.8)
+		camera.rotation.x = clampf(camera.rotation.x + recover, deg_to_rad(-82.0), deg_to_rad(82.0))
+		recoil_return -= recover
+	viewmodel_sway = viewmodel_sway.lerp(Vector2.ZERO, minf(1.0, delta * 8.0))
+	muzzle_flash_time = maxf(0.0, muzzle_flash_time - delta)
+	if muzzle_flash != null:
+		muzzle_flash.visible = muzzle_flash_time > 0.0 and not paused_if_gameplay_locked()
+	if reload_visual_time > 0.0:
+		reload_visual_time = maxf(0.0, reload_visual_time - delta)
+	var moving: float = Vector2(velocity.x, velocity.z).length()
+	var bob: float = 0.0 if aiming or not _gameplay_active() else sin(movement_clock) * minf(0.018, moving * 0.003)
+	var reload_dip: float = 0.0
+	if reload_delay > 0.0 and WEAPON_CONFIG.has(weapon):
+		var reload_total: float = float(WEAPON_CONFIG[weapon]["reload_time"])
+		var progress: float = 1.0 - reload_delay / maxf(0.01, reload_total)
+		reload_dip = sin(progress * PI) * 0.20
 	if weapon_root != null:
-		weapon_root.position = Vector3(0.0, -0.015 if aiming else 0.0, 0.025 if aiming else 0.0)
+		var aim_offset: Vector3 = Vector3(-0.055, -0.045, 0.10) if aiming else Vector3.ZERO
+		weapon_root.position = Vector3(viewmodel_sway.x, bob - reload_dip - (0.015 if aiming else 0.0), weapon_kick + aim_offset.z) + aim_offset
+		weapon_root.rotation = Vector3(-weapon_kick * 0.8, viewmodel_sway.x * 0.7, viewmodel_sway.y * 0.65)
+	if damage_overlay != null:
+		damage_flash_time = maxf(0.0, damage_flash_time - delta)
+		var alpha: float = clampf(damage_flash_time / 0.32, 0.0, 1.0) * 0.32
+		damage_overlay.color = Color(0.42, 0.025, 0.015, alpha)
+
+func paused_if_gameplay_locked() -> bool:
+	return not _gameplay_active()
 
 func _physics_process(delta: float) -> void:
 	if dead or game.paused or inv_open:
@@ -239,8 +323,16 @@ func _fire() -> void:
 		game.notify("Magazine empty — press R to reload")
 		return
 
+	if int(ammo[weapon]) <= 0:
+		game.notify("Magazine empty — press R to reload")
+		return
 	ammo[weapon] = int(ammo[weapon]) - 1
 	fire_delay = float(config["fire_interval"])
+	weapon_kick = 0.13 if weapon == "Shotgun" else (0.055 if weapon == "Rifle" else 0.075)
+	var recoil_angle: float = deg_to_rad(2.4 if weapon == "Shotgun" else (0.65 if weapon == "Rifle" else 1.25))
+	camera.rotation.x = maxf(deg_to_rad(-82.0), camera.rotation.x - recoil_angle)
+	recoil_return += recoil_angle
+	muzzle_flash_time = 0.045 if weapon == "Rifle" else 0.065
 	var hit_count := 0
 	var pellets := int(config["pellets"])
 	for pellet_index in range(pellets):
@@ -258,7 +350,13 @@ func _fire() -> void:
 		if not result.is_empty():
 			var target = result.get("collider")
 			if target != null and target.has_method("take_damage"):
-				target.take_damage(float(config["damage"]))
+				var hit_position: Vector3 = result.get("position", Vector3.ZERO)
+				var damage: float = float(config["damage"])
+				var is_headshot: bool = hit_position.y >= target.global_position.y + 1.52
+				if is_headshot:
+					damage *= 2.0
+				if target.has_method("take_damage"):
+					target.take_damage(damage, hit_position, is_headshot)
 				hit_count += 1
 	game.notify("Fired %s  |  %d in magazine" % [weapon, int(ammo[weapon])])
 	if hit_count > 0:
@@ -277,7 +375,10 @@ func _reload() -> void:
 		game.notify("No reserve ammunition for " + weapon + ".")
 		return
 	reloading_weapon = weapon
+	aiming = false
 	reload_delay = float(WEAPON_CONFIG[weapon]["reload_time"])
+	reload_visual_time = reload_delay
+	weapon_kick = 0.0
 	game.notify("Reloading " + weapon + "...")
 
 func _finish_reload() -> void:
@@ -317,24 +418,36 @@ func hurt(amount: float) -> void:
 	if dead or game.paused or amount <= 0.0:
 		return
 	health = maxf(0.0, health - amount)
-	game.notify("You are hurt!")
+	damage_flash_time = 0.32
+	game.notify("You are hurt!  -%d HP" % int(round(amount)))
 	if health <= 0.0:
 		dead = true
 		game.show_game_over()
 
 func use_item(item_id: String) -> void:
+	# Keep legacy food_tin loot compatible without splitting the underlying inventory.
+	var effect_id: String = "food" if item_id == "food_tin" else item_id
 	if int(inventory.get(item_id, 0)) <= 0:
 		game.notify("You don't have that item.")
 		return
-	if item_id == "food":
+	if effect_id == "food":
+		if hunger >= 98.0:
+			game.notify("You're not hungry enough to waste food.")
+			return
 		hunger = minf(100.0, hunger + 35.0)
-	elif item_id == "water":
+	elif effect_id == "water":
+		if thirst >= 98.0:
+			game.notify("You're not thirsty enough to waste water.")
+			return
 		thirst = minf(100.0, thirst + 40.0)
-	elif item_id == "medkit":
+	elif effect_id == "medkit":
+		if health >= 98.0:
+			game.notify("You're not injured enough to use a medical kit.")
+			return
 		health = minf(100.0, health + 45.0)
 	else:
 		game.notify("That item cannot be used.")
 		return
-	inventory[item_id] = int(inventory[item_id]) - 1
-	game.notify("Used " + item_id.replace("_", " "))
+	inventory[item_id] = maxi(0, int(inventory.get(item_id, 0)) - 1)
+	game.notify("Used " + str(game.item_data.get(item_id, {}).get("name", item_id.replace("_", " "))) + ".")
 	game.toggle_inventory(true)
