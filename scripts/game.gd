@@ -26,6 +26,15 @@ var menu_open := true
 var message_time := 0.0
 var onboarding_index := 0
 var onboarding_timer := 0.0
+const ZOMBIE_TARGET_ALIVE := 6
+const ZOMBIE_MAX_ALIVE := 8
+var zombie_respawn_timer := 0.0
+var zombie_spawn_points: Array[Vector3] = [
+	Vector3(-2,0,-15), Vector3(2,0,15), Vector3(-15,0,-2), Vector3(15,0,2),
+	Vector3(-4,0,-28), Vector3(4,0,28), Vector3(-28,0,4), Vector3(28,0,-4),
+	Vector3(-4,0,38), Vector3(4,0,-38), Vector3(-38,0,-4), Vector3(38,0,4)
+]
+var spawn_rng := RandomNumberGenerator.new()
 var onboarding_steps: Array[String] = [
 	"WASD move  •  Mouse look  •  Shift sprint",
 	"E search / interact  •  LMB fire  •  RMB aim",
@@ -46,6 +55,7 @@ var item_data := {
 }
 
 func _ready() -> void:
+	spawn_rng.randomize()
 	_create_materials()
 	_create_world()
 	_create_ui()
@@ -60,6 +70,22 @@ func _create_materials() -> void:
 	mat_gun = _material(Color("#202322"), 0.52)
 	mat_metal = _material(Color("#515653"), 0.62)
 	mat_wood = _material(Color("#594536"), 0.92)
+	var brick_texture := load("res://assets/textures/soho_brick.svg") as Texture2D
+	var asphalt_texture := load("res://assets/textures/soho_asphalt.svg") as Texture2D
+	var paving_texture := load("res://assets/textures/soho_paving.svg") as Texture2D
+	if brick_texture != null:
+		mat_brick.albedo_texture = brick_texture
+		mat_dark_brick.albedo_texture = brick_texture
+		mat_brick.uv1_scale = Vector3(4.0,3.0,1.0)
+		mat_dark_brick.uv1_scale = Vector3(4.0,3.0,1.0)
+		mat_brick.albedo_color = Color("#b9a99a")
+		mat_dark_brick.albedo_color = Color("#88817a")
+	if asphalt_texture != null:
+		mat_road.albedo_texture = asphalt_texture
+		mat_road.uv1_scale = Vector3(18.0,18.0,1.0)
+	if paving_texture != null:
+		mat_ground.albedo_texture = paving_texture
+		mat_ground.uv1_scale = Vector3(16.0,16.0,1.0)
 	mat_glass.metallic = 0.12
 	mat_road.metallic = 0.04
 
@@ -351,7 +377,68 @@ func _make_zombie(pos: Vector3, is_runner: bool) -> void:
 	zombie.position = pos
 	zombie.set_script(load("res://scripts/zombie.gd"))
 	zombie.runner = is_runner
+	zombie.add_to_group("zombies")
 	add_child(zombie)
+
+func _update_zombie_spawning(delta: float) -> void:
+	var living := 0
+	for node in get_tree().get_nodes_in_group("zombies"):
+		if is_instance_valid(node) and not bool(node.get("dead")):
+			living += 1
+	if living >= ZOMBIE_TARGET_ALIVE or living >= ZOMBIE_MAX_ALIVE:
+		zombie_respawn_timer = 0.0
+		return
+	if zombie_respawn_timer <= 0.0:
+		zombie_respawn_timer = spawn_rng.randf_range(16.0, 24.0)
+		return
+	zombie_respawn_timer -= delta
+	if zombie_respawn_timer > 0.0:
+		return
+	if _try_spawn_zombie():
+		zombie_respawn_timer = 0.0
+	else:
+		zombie_respawn_timer = 5.0
+
+func _try_spawn_zombie() -> bool:
+	if player == null or not is_instance_valid(player) or player.dead:
+		return false
+	var living := 0
+	for node in get_tree().get_nodes_in_group("zombies"):
+		if is_instance_valid(node) and not bool(node.get("dead")):
+			living += 1
+	if living >= ZOMBIE_MAX_ALIVE:
+		return false
+	var candidates := zombie_spawn_points.duplicate()
+	for i in range(candidates.size()):
+		var j := spawn_rng.randi_range(i, candidates.size() - 1)
+		var temp: Vector3 = candidates[i]
+		candidates[i] = candidates[j]
+		candidates[j] = temp
+	for point in candidates:
+		var distance := player.global_position.distance_to(point)
+		if distance < 18.0 or distance > 52.0:
+			continue
+		if point.distance_to(Vector3(-39,0,0)) < 13.0 or point.distance_to(Vector3(40,0,0)) < 13.0:
+			continue
+		var occupied := false
+		for other in get_tree().get_nodes_in_group("zombies"):
+			if is_instance_valid(other) and not bool(other.get("dead")) and other.global_position.distance_to(point) < 4.0:
+				occupied = true
+				break
+		if occupied:
+			continue
+		var query := PhysicsRayQueryParameters3D.create(player.camera.global_position, point + Vector3(0,1.0,0))
+		query.exclude = [player.get_rid()]
+		query.collide_with_bodies = true
+		query.collide_with_areas = false
+		var sight_hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if sight_hit.is_empty():
+			continue
+		var is_runner := spawn_rng.randf() < 0.22
+		_make_zombie(point,is_runner)
+		notify("You hear movement somewhere nearby.")
+		return true
+	return false
 
 func _create_ui() -> void:
 	ui_layer = CanvasLayer.new()
@@ -476,6 +563,10 @@ func show_main_menu() -> void:
 
 func start_new_game() -> void:
 	if player != null and is_instance_valid(player): player.queue_free()
+	trader_stock = {"food": 8, "water": 8, "medkit": 4, "pistol_ammo": 6, "shells": 4, "rifle_ammo": 4, "scrap": 0}
+	for container in get_tree().get_nodes_in_group("searchable_containers"):
+		container.searched = false
+	zombie_respawn_timer = 0.0
 	player = CharacterBody3D.new()
 	player.name = "Player"
 	player.position = Vector3(-42,0,0)
@@ -657,6 +748,8 @@ func update_hud(p: CharacterBody3D) -> void:
 		thirst_bar.value = p.thirst
 
 func _process(delta: float) -> void:
+	if player != null and is_instance_valid(player) and not paused and not player.dead and not menu_open:
+		_update_zombie_spawning(delta)
 	if onboarding_timer > 0.0 and not paused:
 		onboarding_timer -= delta
 		if onboarding_timer <= 0.0:
@@ -703,8 +796,13 @@ func save_game() -> void:
 	if not ["Pistol", "Shotgun", "Rifle"].has(saved_weapon):
 		saved_weapon = "Pistol"
 	var pos: Vector3 = player.global_position
+	var searched_containers: Array[String] = []
+	for container in get_tree().get_nodes_in_group("searchable_containers"):
+		if is_instance_valid(container) and container.searched:
+			searched_containers.append(str(container.title))
 	var data := {
 		"version": 1,
+		"searched_containers": searched_containers,
 		"money": clampi(int(player.money), 0, 1000000000),
 		"health": clampf(float(player.health), 0.0, 100.0),
 		"hunger": clampf(float(player.hunger), 0.0, 100.0),
@@ -778,6 +876,10 @@ func load_game() -> void:
 		var z := _bounded_number(saved_position[2], 0.0, -1000.0, 1000.0)
 		player.global_position = Vector3(x, y, z)
 	player._refresh_weapon_model()
+	var saved_searched = parsed.get("searched_containers", [])
+	if saved_searched is Array:
+		for container in get_tree().get_nodes_in_group("searchable_containers"):
+			container.searched = str(container.title) in saved_searched
 	notify("Progress loaded.")
 
 func _bounded_number(value, fallback: float, minimum: float, maximum: float) -> float:
