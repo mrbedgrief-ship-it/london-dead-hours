@@ -19,10 +19,10 @@ func _ready() -> void:
 	health = 52.0 if runner else 75.0
 	var shape := CapsuleShape3D.new()
 	shape.radius = 0.38
-	shape.height = 1.75
+	shape.height = 2.0
 	var col := CollisionShape3D.new()
 	col.shape = shape
-	col.position.y = 0.88
+	col.position.y = 1.0
 	add_child(col)
 	# Decorative rig meshes have no collision: hitscan rays target this CharacterBody3D.
 	visual_root = Node3D.new()
