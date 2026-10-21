@@ -551,10 +551,13 @@ func toggle_inventory(force_close := false) -> void:
 	money_label.add_theme_color_override("font_color",Color("#e3c49a"))
 	c.add_child(money_label)
 	var item_count := 0
+	var usable_count := 0
 	for id in player.inventory.keys():
 		var count := int(player.inventory[id])
 		if count > 0:
 			item_count += count
+			if id in ["food","food_tin","water","medkit"]:
+				usable_count += count
 			var data: Dictionary = item_data.get(id,{"name":id,"desc":"A recovered item.","category":"SUPPLY"})
 			var row := HBoxContainer.new()
 			var label := Label.new()
@@ -575,6 +578,11 @@ func toggle_inventory(force_close := false) -> void:
 		empty.text = "Your pack is empty. Search crates, shops and abandoned vehicles."
 		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		c.add_child(empty)
+	elif usable_count == 0:
+		var supplies_note := Label.new()
+		supplies_note.text = "No food, water or medical supplies in your pack."
+		supplies_note.add_theme_color_override("font_color",Color("#c58b7c"))
+		c.add_child(supplies_note)
 	var equip_label := Label.new()
 	equip_label.text = "1 PISTOL  ·  2 SHOTGUN  ·  3 RIFLE"
 	c.add_child(equip_label)
