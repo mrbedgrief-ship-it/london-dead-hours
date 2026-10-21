@@ -118,6 +118,23 @@ func _box(parent: Node3D, name: String, pos: Vector3, size: Vector3, material: M
 	parent.add_child(node)
 	return node
 
+func _capsule(parent: Node3D, part_name: String, pos: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	part.name = part_name
+	var radius := minf(size.x,size.z) * 0.5
+	var mesh := CapsuleMesh.new()
+	mesh.radius = radius
+	mesh.height = maxf(size.y,radius*2.0)
+	mesh.radial_segments = 12
+	mesh.rings = 4
+	part.mesh = mesh
+	part.scale = Vector3(size.x/(radius*2.0),size.y/mesh.height,size.z/(radius*2.0))
+	part.position = pos
+	part.material_override = material
+	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	parent.add_child(part)
+	return part
+
 func _create_world() -> void:
 	var env_node := WorldEnvironment.new()
 	var env := Environment.new()
@@ -352,19 +369,19 @@ func _make_trader(pos: Vector3) -> void:
 	var trousers := _material(Color("#292d2b"),0.96)
 	var skin := _material(Color("#9a806d"),0.95)
 	var pack := _material(Color("#5b4a38"),0.96)
-	_box(body,"Trader coat",Vector3(0,1.15,0),Vector3(0.72,0.76,0.38),coat,false)
+	_capsule(body,"Trader coat",Vector3(0,1.15,0),Vector3(0.72,0.76,0.38),coat)
 	_box(body,"Trader vest",Vector3(0,1.2,0.205),Vector3(0.34,0.48,0.055),pack,false)
-	_box(body,"Trader head",Vector3(0,1.82,0),Vector3(0.34,0.38,0.32),skin,false)
-	_box(body,"Trader neck",Vector3(0,1.59,0),Vector3(0.16,0.14,0.16),skin,false)
+	_capsule(body,"Trader head",Vector3(0,1.82,0),Vector3(0.34,0.38,0.32),skin)
+	_capsule(body,"Trader neck",Vector3(0,1.59,0),Vector3(0.16,0.14,0.16),skin)
 	_box(body,"Trader cap",Vector3(0,2.03,0),Vector3(0.38,0.12,0.36),trousers,false)
-	_box(body,"Trader left upper arm",Vector3(-0.48,1.28,0),Vector3(0.19,0.49,0.21),coat,false)
-	_box(body,"Trader left forearm",Vector3(-0.52,0.93,-0.03),Vector3(0.16,0.39,0.17),coat,false)
-	_box(body,"Trader right upper arm",Vector3(0.48,1.28,0),Vector3(0.19,0.49,0.21),coat,false)
-	_box(body,"Trader right forearm",Vector3(0.52,0.93,-0.03),Vector3(0.16,0.39,0.17),coat,false)
+	_capsule(body,"Trader left upper arm",Vector3(-0.48,1.28,0),Vector3(0.19,0.49,0.21),coat)
+	_capsule(body,"Trader left forearm",Vector3(-0.52,0.93,-0.03),Vector3(0.16,0.39,0.17),coat)
+	_capsule(body,"Trader right upper arm",Vector3(0.48,1.28,0),Vector3(0.19,0.49,0.21),coat)
+	_capsule(body,"Trader right forearm",Vector3(0.52,0.93,-0.03),Vector3(0.16,0.39,0.17),coat)
 	_box(body,"Trader left hand",Vector3(-0.52,0.7,-0.03),Vector3(0.14,0.12,0.14),skin,false)
 	_box(body,"Trader right hand",Vector3(0.52,0.7,-0.03),Vector3(0.14,0.12,0.14),skin,false)
 	for leg_x in [-0.2,0.2]:
-		_box(body,"Trader trousers",Vector3(leg_x,0.43,0),Vector3(0.23,0.68,0.28),trousers,false)
+		_capsule(body,"Trader trousers",Vector3(leg_x,0.43,0),Vector3(0.23,0.68,0.28),trousers)
 		_box(body,"Trader boot",Vector3(leg_x,0.09,-0.06),Vector3(0.25,0.16,0.4),mat_gun,false)
 	_box(body,"Trader backpack",Vector3(0,1.28,-0.28),Vector3(0.43,0.54,0.2),pack,false)
 	body.set_script(load("res://scripts/interactable.gd"))
